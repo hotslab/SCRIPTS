@@ -55,7 +55,7 @@ echo
 echo "Video directory = $directory"
 echo "Input file format = $inputfiletype"
 echo "Framerate = $newFPS"
-ECHO "Framerate to be modified limit range = $fpsLimit"
+echo "Framerate to be modified limit range = $fpsLimit"
 echo
 echo "#######################################################"
 echo "#######################################################"
