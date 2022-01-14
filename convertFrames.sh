@@ -119,7 +119,15 @@ if [[ $totalfiles -gt 0 ]]; then
         echo "Converting video with new fps of $newFPS..."
         echo "======================================================="
         echo
-        ffmpeg -y -i "$i" -filter:v fps=fps="${newFPS}" "${directory}FPSCON/${filetyperemoved}.${inputfiletype}" < /dev/null
+        ffmpeg -y -i "$i" -filter:v fps=fps="${newFPS}" -c:v libx265 -c:a aac -ab 128k -ar 44100 "${directory}FPSCON/${filetyperemoved}.${inputfiletype}" < /dev/null
+
+        mv "$i" "${directory}FPSDONE/${urlremoved}"
+
+        echo
+        echo "======================================================="
+        echo "The video file No. $count of $totalfiles titled '$i' has been converted to the FPSCON folder, and the original file moved to the FPSDONE folder."
+        echo "======================================================="
+        echo
       else
         echo
         echo "======================================================="
@@ -134,14 +142,6 @@ if [[ $totalfiles -gt 0 ]]; then
       echo "======================================================="
       echo
     fi
-
-    mv "$i" "${directory}FPSDONE/${urlremoved}"
-
-    echo
-    echo "======================================================="
-    echo "The video file No. $count of $totalfiles titled '$i' has been converted to the FPSCON folder, and the original file moved to the FPSDONE folder."
-    echo "======================================================="
-    echo
   done < <(find "$directory" -maxdepth 1 -name "*.$inputfiletype" -print0)
 
   unset IFS
