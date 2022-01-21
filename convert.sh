@@ -14,10 +14,10 @@ showHelp()
    echo -e "-a     Audio codec .e.g aac - default is \e[1m aac -ab 128k -ar 44100 \e[0m"
    echo -e "-s     Maximum scale dimension for video .e.g 1080 or 720 - default is \e[1m 1080 \e[0m"
    echo -e "-r     Remove folders when done i.e. \e[1m yes \e[0m or \e[1m no \e[0m - default is \e[1m no \e[0m"
-   echo -e "-x    Convert video frames - default is \e[1m no \e[0m"
-   echo -e "-f    Video frames per second (fps) .e.g 24 or 60 - default is \e[1m 24 \e[0m"
-   echo -e "-l    Limit range for fps to be converted .e.g 24 - default is \e[1m 0 \e[0m"
-   echo -e "-help  Print this \e[1m Help Screen \e[0m"
+   echo -e "-x     Convert video frames - default is \e[1m no \e[0m"
+   echo -e "-f     Video frames per second (fps) .e.g 24 or 60 - default is \e[1m 24 \e[0m"
+   echo -e "-l     Limit range for fps to be converted .e.g 24 - default is \e[1m 0 \e[0m"
+   echo -e "-help  Print this \e[1mhelp screen \e[0m"
    echo
 }
 
@@ -115,13 +115,11 @@ if [[ $totalfiles -gt 0 ]]; then
     fpsData=$(ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of csv=s=x:p=0 "$i")
 
     OLDIFS=$IFS
-
     IFS='/' read -ra originalFPSArray <<< "$fpsData"
     showInfo "Video's original fps data is ${originalFPSArray[0]}/${originalFPSArray[1]}"
     originalFPS=$(bc -l <<< "(${originalFPSArray[0]} / ${originalFPSArray[1]})")
     originalFPS=$(roundNumber ${originalFPS} 0)
     showInfo "Calculated video framerate is $originalFPS"
-
     IFS=$OLDIFS
 
     urlremoved="${i##*/}"
@@ -183,7 +181,6 @@ if [[ $totalfiles -gt 0 ]]; then
   fi
 
   showInfo "Finished converting $count of $totalfiles video files in this folder."
-
 else
   echo "No files with extension $inputfiletype found so no conversion took place."
 fi
