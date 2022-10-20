@@ -28,7 +28,7 @@ parameterInputError() {
 showInfo() {
 	echo
 	echo "======================================================="
-	echo -e ${1}
+	echo -e "$(date -u): " ${1}
 	echo "======================================================="
 	echo
 }
@@ -75,11 +75,11 @@ do
 	aws s3api get-object --debug --profile $profile --bucket $bucket --key $file.$extension --range "bytes=$fileSize-" "$file.part"
 	showInfo "Download has stopped for $file.$extension..."
 	downloadedFileSize=$(stat --printf="%s" "$file.part")
-	showInfo "$file.part download size is $downloadedFileSize."
+	showInfo "$file.part download file size is $downloadedFileSize."
 	cat "$file.part" >> "$file.$extension"
 	showInfo "File '$file.part' has been appended to '$file.$extension'."
 	fileSize=$(stat --printf="%s" $file.$extension)
-	showInfo "File size has increased by $fileSize."
+	showInfo "$file.$extension file size has been increased to $fileSize."
 done
 
 showInfo "Download completed for $file.$extension"
