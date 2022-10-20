@@ -74,6 +74,8 @@ do
 	showInfo "Download has started for $file.$extension...."
 	aws s3api get-object --debug --profile $profile --bucket $bucket --key $file.$extension --range "bytes=$fileSize-" "$file.part"
 	showInfo "Download has stopped for $file.$extension..."
+	downloadedFileSize=$(stat --printf="%s" "$file.part")
+	showInfo "$file.part download size is $downloadedFileSize."
 	cat "$file.part" >> "$file.$extension"
 	showInfo "File '$file.part' has been appended to '$file.$extension'."
 	fileSize=$(stat --printf="%s" $file.$extension)
