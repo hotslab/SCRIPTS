@@ -62,7 +62,7 @@ showInfo "Command has been initiated for $file.$extension"
 
 fileSize=$(stat --printf="%s" $file.$extension)
 
-if ! [[ ${OPTARG} =~ $numbRegex ]] ; then 
+if ! [[ $fileSize =~ $numbRegex ]] ; then 
 	fileSize=0
 	showInfo "Initial file size is not set. So it has been initialised to $fileSize."
 fi
