@@ -73,7 +73,7 @@ while  [ $fileSize -lt $size ]
 do
 	showInfo "Download has started for $file.$extension...."
 	aws s3api get-object --debug --profile $profile --bucket $bucket --key $file.$extension --range "bytes=$fileSize-" "$file.part"
-    showInfo "Download has stopped for $file.$extension..."
+	showInfo "Download has stopped for $file.$extension..."
 	cat "$file.part" >> "$file.$extension"
 	showInfo "File '$file.part' has been appended to '$file.$extension'."
 	fileSize=$(stat --printf="%s" $file.$extension)
