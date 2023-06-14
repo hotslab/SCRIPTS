@@ -80,11 +80,11 @@ filename=$(yt-dlp -o "%(title)s" --get-filename --no-download-archive "$url")
 
 showInfo "Filename is $filename"
 
-showInfo "Downloading video file with command yt-dlp -i -o $filename-video.$videoFormat -f $video  $url"
+showInfo "Downloading video file with command yt-dlp --abort-on-unavailable-fragment --fragment-retries 999 -i -o $filename-video.$videoFormat -f $video  $url"
 
 yt-dlp -i --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-video.$videoFormat" -f "$video"  "$url"
 
-showInfo "Downloading audio file with command yt-dlp -i -o $filename-audio.$audioFormat -f $audio  $url"
+showInfo "Downloading audio file with command yt-dlp -i --abort-on-unavailable-fragment --fragment-retries 999 -o $filename-audio.$audioFormat -f $audio  $url"
 
 yt-dlp -i --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-audio.$audioFormat" -f "$audio"  "$url"
 
