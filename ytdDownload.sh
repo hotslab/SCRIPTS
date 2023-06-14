@@ -88,7 +88,7 @@ showInfo "Downloading audio file with command yt-dlp -i -o $filename-audio.$audi
 
 yt-dlp -i --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-audio.$audioFormat" -f "$audio"  "$url"
 
-ffmpeg -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat" -vcodec copy -acodec "$filename.$output"
+ffmpeg -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat" -vcodec copy -acodec copy "$filename.$output"
 
 rm "$filename-video.$videoFormat" "$filename-audio.$audioFormat"
 
