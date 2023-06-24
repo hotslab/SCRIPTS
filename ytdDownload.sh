@@ -92,4 +92,4 @@ ffmpeg -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat" -vcod
 
 rm "$filename-video.$videoFormat" "$filename-audio.$audioFormat"
 
-showInfo "Video saved as $filename.mkv"
+showInfo "Video saved as $filename.$output"
