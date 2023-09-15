@@ -54,7 +54,7 @@ do
   a) 
 		if ! [[ ${OPTARG} =~ $re ]] ; then showInfo "Error: The \e[1mAudio ID\e[0m value i.e -s is empty or not a number!"; exit; else audio=${OPTARG}; fi ;;
 	s) audioFormat=${OPTARG} ;;
-  t) timeOption="--download-sections '${OPTARG}'" ;;
+  t) timeOption="--download-sections "${OPTARG}"" ;;
   h) 
     if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit; else showHelp; exit; fi;;
   *) 	showInfo "Error: Invalid option selected!"; exit;;
