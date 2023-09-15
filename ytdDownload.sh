@@ -13,6 +13,7 @@ showHelp()
    echo -e "-f     Video format extension"
    echo -e "-a     Audio format number"
    echo -e "-s     Audio format extension"
+   echo -e '-s     Time duration to cut from video e.g. "*34:38-49:37"'
    echo -e "-help  Print this \e[1mhelp screen \e[0m"
    echo
 }
@@ -39,23 +40,25 @@ video=""
 videoFormat="webm"
 audio=""
 audioFormat="webm"
+timeOption=""
 
-while getopts u:o:v:f:a:s:h: option
+while getopts u:o:v:f:a:s:t:h: option
 do
 	case "${option}" in
 	u)  	
 		if [[ -z "${OPTARG}" ]] ; then showInfo "Error: The \e[1mVideo url \e[0m value i.e -s is not set!"; exit; else url=${OPTARG}; fi ;;
-    o)	output=${OPTARG} ;;
-    v)
+  o)	output=${OPTARG} ;;
+  v)
 		if ! [[ ${OPTARG} =~ $re ]] ; then showInfo "Error: The \e[1mVideo ID\e[0m value i.e -s is empty or not a number!"; exit; else video=${OPTARG}; fi ;;
 	f)	videoFormat=${OPTARG} ;;
-    a) 
+  a) 
 		if ! [[ ${OPTARG} =~ $re ]] ; then showInfo "Error: The \e[1mAudio ID\e[0m value i.e -s is empty or not a number!"; exit; else audio=${OPTARG}; fi ;;
-	s)	audioFormat=${OPTARG} ;;
-    h) 
-        if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit; else showHelp; exit; fi;;
-    *) 	showInfo "Error: Invalid option selected!"; exit;;
-    esac
+	s) audioFormat=${OPTARG} ;;
+  t) timeOption="--download-sections '${OPTARG}'" ;;
+  h) 
+    if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit; else showHelp; exit; fi;;
+  *) 	showInfo "Error: Invalid option selected!"; exit;;
+  esac
 done
 
 echo
@@ -70,6 +73,7 @@ echo "Video file format ID                  =>  $video"
 echo "Video file extension                  =>  $videoFormat"
 echo "Audio file format ID                  =>  $audio"
 echo "Audio file extension                  =>  $audioFormat"
+echo "Video time duration                   =>  $timeOption"
 echo
 echo "#######################################################"
 echo "#######################################################"
@@ -80,13 +84,13 @@ filename=$(yt-dlp -o "%(title)s" --get-filename --no-download-archive "$url")
 
 showInfo "Filename is $filename"
 
-showInfo "Downloading video file with command yt-dlp --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -i -o $filename-video.$videoFormat -f $video  $url"
+showInfo "Downloading video file with command yt-dlp -i $timeOption --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -i -o $filename-video.$videoFormat -f $video  $url"
 
-yt-dlp -i --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-video.$videoFormat" -f "$video"  "$url"
+yt-dlp -i $timeOption --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-video.$videoFormat" -f "$video"  "$url"
 
-showInfo "Downloading audio file with command yt-dlp -i --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -o $filename-audio.$audioFormat -f $audio  $url"
+showInfo "Downloading audio file with command yt-dlp -i $timeOption --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -o $filename-audio.$audioFormat -f $audio  $url"
 
-yt-dlp -i --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-audio.$audioFormat" -f "$audio"  "$url"
+yt-dlp -i $timeOption --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-audio.$audioFormat" -f "$audio"  "$url"
 
 ffmpeg  -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat"  -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$filename.$output"
 
