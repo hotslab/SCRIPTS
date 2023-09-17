@@ -86,7 +86,7 @@ showInfo "Filename is $filename"
 
 showInfo "Downloading video file with command yt-dlp -i $timeOption --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -i -o $filename-video.$videoFormat -f $video  $url"
 
-yt-dlp -i $timeOption --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-video.$videoFormat" -f "$video"  "$url"
+yt-dlp -i $timeOption --write-subs --sub-lang "en.*" --write-auto-sub --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-video.$videoFormat" -f "$video"  "$url"
 
 showInfo "Downloading audio file with command yt-dlp -i $timeOption --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -o $filename-audio.$audioFormat -f $audio  $url"
 
