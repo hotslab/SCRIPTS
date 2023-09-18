@@ -84,16 +84,22 @@ filename=$(yt-dlp -o "%(title)s" --get-filename --no-download-archive "$url")
 
 showInfo "Filename is $filename"
 
-showInfo "Downloading video file with command yt-dlp -i $timeOption --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -i -o $filename-video.$videoFormat -f $video  $url"
+showInfo "Downloading video file with command yt-dlp -i $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -i -o $filename-video.$videoFormat -f $video  $url"
 
-yt-dlp -i $timeOption --write-subs --sub-lang "en.*" --write-auto-sub --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-video.$videoFormat" -f "$video"  "$url"
+yt-dlp -i $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-video.$videoFormat" -f "$video"  "$url"
 
 showInfo "Downloading audio file with command yt-dlp -i $timeOption --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -o $filename-audio.$audioFormat -f $audio  $url"
 
 yt-dlp -i $timeOption --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-audio.$audioFormat" -f "$audio"  "$url"
 
-ffmpeg  -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat"  -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$filename.$output"
+if test -f "$filename-video.en.srt"; then 
+    showInfo "The english subtitle is $subtitle"
+    ffmpeg  -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat" -i "$filename-video.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$filename.$output"
+    rm "$filename-video.en.srt"
+  else
+    ffmpeg  -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat" -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$filename.$output"
+fi
 
-rm "$filename-video.$videoFormat" "$filename-audio.$audioFormat"
+rm "$filename-video.$videoFormat" "$filename-audio.$audioFormat" 
 
 showInfo "Video saved as $filename.$output"
