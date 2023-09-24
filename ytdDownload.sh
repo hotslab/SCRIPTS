@@ -9,11 +9,9 @@ showHelp()
    echo "Options:"
    echo -e "-u     Video url"
    echo -e "-o     Output video format"
-   echo -e "-v     Video format number"
    echo -e "-f     Video format extension"
-   echo -e "-a     Audio format number"
-   echo -e "-s     Audio format extension"
-   echo -e '-s     Time duration to cut from video e.g. "*34:38-49:37"'
+   echo -e '-t     Time duration to cut from video e.g. "*34:38-49:37"'
+   echo -e '-m     File type dowmload mode i.e. either "video" of "audio" '
    echo -e "-help  Print this \e[1mhelp screen \e[0m"
    echo
 }
@@ -27,9 +25,10 @@ showInfo() {
 }
 
 #unset u
-#unset v
-#unset a
+#unset f
 #unset h
+#unset t
+#unset m
 
 if [[ $1 == "" ]]; then echo "No options were passed"; exit; fi
 
@@ -37,24 +36,23 @@ if [[ $1 == "" ]]; then echo "No options were passed"; exit; fi
 url=""
 output="mp4"
 video=""
-videoFormat="webm"
-audio=""
-audioFormat="webm"
 timeOption=""
+mode="video"
 
-while getopts u:o:v:f:a:s:t:h: option
+while getopts u:o:f:t:m:h: option
 do
 	case "${option}" in
 	u)  	
-		if [[ -z "${OPTARG}" ]] ; then showInfo "Error: The \e[1mVideo url \e[0m value i.e -s is not set!"; exit; else url=${OPTARG}; fi ;;
+		if [[ -z "${OPTARG}" ]] ; then showInfo "Error: The \e[1mVideo url \e[0m value i.e -u is not set!"; exit; else url=${OPTARG}; fi ;;
   o)	output=${OPTARG} ;;
-  v)
-		if ! [[ ${OPTARG} =~ $re ]] ; then showInfo "Error: The \e[1mVideo ID\e[0m value i.e -s is empty or not a number!"; exit; else video=${OPTARG}; fi ;;
-	f)	videoFormat=${OPTARG} ;;
-  a) 
-		if ! [[ ${OPTARG} =~ $re ]] ; then showInfo "Error: The \e[1mAudio ID\e[0m value i.e -s is empty or not a number!"; exit; else audio=${OPTARG}; fi ;;
-	s) audioFormat=${OPTARG} ;;
+  f)
+		if [[ -z ${OPTARG} ]] ; then showInfo "Error: The \e[1mVideo format \e[0m value i.e -f is is not set!"; exit; else video=${OPTARG}; fi ;;
   t) timeOption="--download-sections "${OPTARG}"" ;;
+  m)
+    if [[ ${OPTARG} == "video" ]] ||  [[ ${OPTARG} == "audio" ]]
+      then mode=${OPTARG};
+      else showInfo "Error: The \e[1mMode\e[0m value is incorrect i.e -m must be either video or audio!"; exit; 
+    fi ;; 
   h) 
     if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit; else showHelp; exit; fi;;
   *) 	showInfo "Error: Invalid option selected!"; exit;;
@@ -67,39 +65,36 @@ echo "#######################################################"
 echo
 echo "PARAMETERS USED IN CONVERSION "
 echo
-echo "Video url                             =>  $url"
-echo "Video output file extension           =>  $output"
-echo "Video file format ID                  =>  $video"
-echo "Video file extension                  =>  $videoFormat"
-echo "Audio file format ID                  =>  $audio"
-echo "Audio file extension                  =>  $audioFormat"
-echo "Video time duration                   =>  $timeOption"
+echo "Url                             =>  $url"
+echo "Output file extension           =>  $output"
+echo "Input file format               =>  $video"
+echo "File type download mode         =>  $mode"
+echo "Time duration                   =>  $timeOption"
 echo
 echo "#######################################################"
 echo "#######################################################"
 echo
-
 
 filename=$(yt-dlp -o "%(title)s" --get-filename --no-download-archive "$url")
 
-showInfo "Filename is $filename"
-
-showInfo "Downloading video file with command yt-dlp -i $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -i -o $filename-video.$videoFormat -f $video  $url"
-
-yt-dlp -i $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-video.$videoFormat" -f "$video"  "$url"
-
-showInfo "Downloading audio file with command yt-dlp -i $timeOption --embed-metadata  --abort-on-unavailable-fragment --fragment-retries 999 -o $filename-audio.$audioFormat -f $audio  $url"
-
-yt-dlp -i $timeOption --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-audio.$audioFormat" -f "$audio"  "$url"
-
-if test -f "$filename-video.en.srt"; then 
-    showInfo "The english subtitle is $subtitle"
-    ffmpeg  -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat" -i "$filename-video.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$filename.$output"
-    rm "$filename-video.en.srt"
-  else
-    ffmpeg  -i "$filename-video.$videoFormat" -i "$filename-audio.$audioFormat" -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$filename.$output"
+if [[ $mode == "video" ]]
+  then
+    fileExtension=$(yt-dlp -o "%(ext)s" -f "$video" --get-filename --no-download-archive "$url")
+    showInfo "Downloading $filename with extention $fileExtension..."
+    time yt-dlp -i $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$filename-FILE.%(ext)s" -f "$video" "$url"
+    if [[ -f "$filename-FILE.en.srt" ]]
+      then 
+        showInfo "The subtitle file found is $filename-FILE.en.srt"
+        time ffmpeg  -i "$filename-FILE.$fileExtension" -i "$filename-FILE.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$filename.$output"
+        rm "$filename-FILE.en.srt"
+    else
+      showInfo "No subtitle found..."
+      time ffmpeg  -i "$filename-FILE.$fileExtension" -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$filename.$output"
+    fi
+    rm "$filename-FILE.$fileExtension"
+elif [[ $mode == "audio" ]]
+  then
+    time yt-dlp --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s.%(ext)s" --add-metadata --embed-thumbnail --metadata-from-title "%(artist)s - %(title)s" "$url"
 fi
 
-rm "$filename-video.$videoFormat" "$filename-audio.$audioFormat" 
-
-showInfo "Video saved as $filename.$output"
+showInfo "File saved as $filename.$output"
