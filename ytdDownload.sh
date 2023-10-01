@@ -98,7 +98,7 @@ else
   showInfo "The extension \e[1m$output\e[0m was not found for \e[1m$mode\e[0m mode. Please add the correct output extension for \e[1m$mode\e[0m file on parameter -o"; exit;
 fi
 
-fileName=$(yt-dlp -o "%(title)s^%(ext)s" --get-filename --no-download-archive "$url")
+fileName=$(yt-dlp -o "%(title)s^%(ext)s" -f "$video" --get-filename --skip-download "$url")
 fileTitle=${fileName%^*}
 fileExtension=${fileName#*^}
 
