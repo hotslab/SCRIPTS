@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 showHelp()
 {
    # Display Help
@@ -13,6 +15,7 @@ showHelp()
    echo -e '\e[1m -t \e[0m     Time duration to cut from video e.g. "*34:38-49:37" '
    echo -e '\e[1m -m \e[0m     File type dowmload mode i.e. either "video" of "audio" '
    echo -e '\e[1m -a \e[0m     Use aria2c to download i.e. pass "yes" to activate '
+   echo -e '\e[1m -n \e[0m     Custom file name i.e. \e[1m "My Video" \e[0m'
    echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen \e[0m"
    echo
 }
@@ -25,14 +28,22 @@ showInfo() {
   echo
 }
 
+cleanup() {
+  showInfo "Script externaly stopped! Exiting download process gracefully..."
+  exit 1
+}
+
+trap cleanup INT SIGINT SIGTERM
+
 #unset u
 #unset f
 #unset h
 #unset t
 #unset m
 #unset a
+#unset n
 
-if [[ $1 == "" ]]; then echo "No options were passed"; exit; fi
+if [[ $1 == "" ]]; then echo "No options were passed"; exit 1; fi
 
 # Default parameters
 url=""
@@ -41,29 +52,31 @@ video=""
 timeOption=""
 mode="video"
 useAria2cDownloader="no"
+customName=""
 
-while getopts u:o:f:t:m:a:h: option
+while getopts u:o:f:t:m:a:n:h: option
 do
 	case "${option}" in
 	u)  	
-		if [[ -z "${OPTARG}" ]] ; then showInfo "Error: The \e[1mVideo url \e[0m value i.e -u is not set! "; exit; else url=${OPTARG}; fi ;;
+		if [[ -z ${OPTARG} ]] ; then showInfo "Error: The \e[1mVideo url \e[0m value i.e -u is not set! "; exit 1; else url=${OPTARG}; fi ;;
   o)	output=${OPTARG} ;;
   f)
-		if [[ -z ${OPTARG} ]] ; then showInfo "Error: The \e[1mVideo format \e[0m value i.e -f is is not set! "; exit; else video=${OPTARG}; fi ;;
+		if [[ -z ${OPTARG} ]] ; then showInfo "Error: The \e[1mVideo format \e[0m value i.e -f is is not set! "; exit 1; else video=${OPTARG}; fi ;;
   t) timeOption="--download-sections "${OPTARG}"" ;;
   m)
     if [[ ${OPTARG} == "video" ]] ||  [[ ${OPTARG} == "audio" ]]
     then mode=${OPTARG};
-    else showInfo "Error: The \e[1mMode\e[0m value is incorrect i.e -m must be either "video" or "audio"! "; exit; 
+    else showInfo "Error: The \e[1mMode\e[0m value is incorrect i.e -m must be either "video" or "audio"! "; exit 1; 
     fi ;;
   a) 
     if [[ ${OPTARG} == "yes" ]] || [[ ${OPTARG} == "no" ]]
     then useAria2cDownloader=${OPTARG};
-    else showInfo "Error: The \e[1mAria2c Downloader\e[0m activation value is incorrect i.e -a must be either "yes" or "no"! "; exit; 
+    else showInfo "Error: The \e[1mAria2c Downloader\e[0m activation value is incorrect i.e -a must be either "yes" or "no"! "; exit 1; 
     fi ;;
+  n) customName=${OPTARG} ;;
   h) 
-    if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit; else showHelp; exit; fi;;
-  *) 	showInfo "Error: Invalid option selected!"; exit;;
+    if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit 1; else showHelp; exit 1; fi;;
+  *) 	showInfo "Error: Invalid option selected!"; exit 1;;
   esac
 done
 
@@ -77,8 +90,9 @@ echo -e "Url                             =>  \e[1m$url\e[0m "
 echo -e "Output file extension           =>  \e[1m$output\e[0m "
 echo -e "Input file format               =>  \e[1m$video\e[0m "
 echo -e "File type download mode         =>  \e[1m$mode\e[0m "
-echo -e "Time duration                   =>  \e[1m$timeOption\e[0m "
 echo -e "Aria2c downloader               =>  \e[1m$useAria2cDownloader\e[0m "
+if ! [[ $timeOption == "" ]]; then echo -e "Time duration                   =>  \e[1m$timeOption\e[0m "; fi
+if ! [[ $customName == "" ]]; then echo -e "Custom name                     =>  \e[1m$customName\e[0m "; fi
 echo
 echo "#######################################################"
 echo "#######################################################"
@@ -95,16 +109,22 @@ elif [[ $mode == "audio" ]] && [[ ${audioExtensions[@]} =~ $output ]]
 then 
   showInfo "The extension \e[1m$output\e[0m was found for \e[1m$mode\e[0m mode. Proceeding..."
 else
-  showInfo "The extension \e[1m$output\e[0m was not found for \e[1m$mode\e[0m mode. Please add the correct output extension for \e[1m$mode\e[0m file on parameter -o"; exit;
+  showInfo "The extension \e[1m$output\e[0m was not found for \e[1m$mode\e[0m mode. Please add the correct output extension for \e[1m$mode\e[0m file on parameter -o"; exit 1;
 fi
 
-fileName=$(yt-dlp -o "%(title)s^%(ext)s" -f "$video" --get-filename --skip-download "$url")
-fileTitle=${fileName%^*}
+fileName=""
+
+if [[ $mode == "video" ]]
+then fileName=$(yt-dlp -o "%(title)s^%(ext)s" -f "$video" --get-filename --skip-download "$url")
+else fileName=$(yt-dlp --get-filename --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s^%(ext)s" "$url")
+fi
+
+fileTitle=$([ $customName == "" ] && echo "${fileName%^*}" || echo "$customName")
 fileExtension=${fileName#*^}
 
 if [[ ${videoExtensions[@]} =~ $fileExtension ]] || [[ ${audioExtensions[@]} =~ $fileExtension ]]
 then showInfo "Parsed files name is \e[1m$fileTitle.$fileExtension\e[0m"
-else showInfo "The \e[1m$mode\e[0m extension \e[1m$fileExtension\e[0m was not parsed succesfully."; exit;
+else showInfo "The \e[1m$mode\e[0m extension \e[1m$fileExtension\e[0m was not parsed succesfully."; exit 1;
 fi
 
 showInfo "Downloading file \e[1m$fileTitle.$fileExtension\e[0m and converting it to be \e[1m$fileTitle.$output\e[0m..."
@@ -129,8 +149,8 @@ then
 elif [[ $mode == "audio" ]]
 then
   if [[ $useAria2cDownloader == "yes" ]]
-  then  time yt-dlp --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s.%(ext)s" --add-metadata --convert-thumbnails jpg --embed-thumbnail --metadata-from-title "%(artist)s - %(title)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" "$url"
-  else  time yt-dlp --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s.%(ext)s" --add-metadata --convert-thumbnails jpg --embed-thumbnail --metadata-from-title "%(artist)s - %(title)s" "$url"
+  then  time yt-dlp --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" "$url"
+  else  time yt-dlp --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail "$url"
   fi
 fi
 
@@ -140,3 +160,4 @@ else showInfo "File \e[1m$fileTitle.$output\e[0m was not saved"
 fi
 
 showInfo "Finished!"
+exit 0
