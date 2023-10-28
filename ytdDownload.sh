@@ -4,20 +4,29 @@ set -e
 
 showHelp()
 {
-   # Display Help
-   echo -e "\e[1mDownload video \e[0m"
-   echo
-   echo "Syntax: \e[1m bash ytDownload.sh [-u|v|f|a|s|help] \e[0m"
-   echo "Options:"
-   echo -e "\e[1m -u \e[0m     Video url"
-   echo -e "\e[1m -o \e[0m     Output video format"
-   echo -e "\e[1m -f \e[0m     Video format extension"
-   echo -e '\e[1m -t \e[0m     Time duration to cut from video e.g. "*34:38-49:37" '
-   echo -e '\e[1m -m \e[0m     File type dowmload mode i.e. either "video" of "audio" '
-   echo -e '\e[1m -a \e[0m     Use aria2c to download i.e. pass "yes" to activate '
-   echo -e '\e[1m -n \e[0m     Custom file name i.e. \e[1m "My Video" \e[0m'
-   echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen \e[0m"
-   echo
+  # Show optional  error message
+  if ! [[ -v $1 ]]; then showInfo "$1"; fi
+
+  # Display Help
+  echo
+  echo "======================================================="
+  echo
+  echo -e "\e[1mDownload Video Help\e[0m"
+  echo
+  echo "Syntax: \e[1m bash ytDownload.sh [-u|v|f|a|s|help] \e[0m"
+  echo
+  echo "Options:"
+  echo -e "\e[1m -u \e[0m     Video url"
+  echo -e "\e[1m -o \e[0m     Output video or audio format e.g mp3 or mp4"
+  echo -e "\e[1m -f \e[0m     Video format extension e.g. -f 22 for 720p youtube video"
+  echo -e '\e[1m -m \e[0m     File type dowmload mode i.e. either "video" or "audio" '
+  echo -e '\e[1m -a \e[0m     Use aria2c to download i.e. pass "yes" to activate or "no" to deactivate '
+  echo -e '\e[1m -t \e[0m     Time duration to cut from video e.g. "*34:38-49:37" where format is "*HH:mm:ss-HH:mm:ss" '
+  echo -e '\e[1m -n \e[0m     Custom file name i.e. \e[1m "My Video" \e[0m'
+  echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen \e[0m"
+  echo
+  echo  "======================================================"
+  echo
 }
 
 showInfo() {
@@ -28,12 +37,12 @@ showInfo() {
   echo
 }
 
-cleanup() {
+cleanUp() {
   showInfo "Script externaly stopped! Exiting download process gracefully..."
   exit 1
 }
 
-trap cleanup INT SIGINT SIGTERM
+trap cleanUp INT SIGINT SIGTERM
 
 #unset u
 #unset f
@@ -43,42 +52,43 @@ trap cleanup INT SIGINT SIGTERM
 #unset a
 #unset n
 
-if [[ $1 == "" ]]; then echo "No options were passed"; exit 1; fi
+if [[ -v $1 ]]; then showHelp "No options were passed"; exit 1; fi
 
 # Default parameters
 url=""
-output="mp4"
 video=""
-timeOption=""
+output="mp4"
 mode="video"
-useAria2cDownloader="no"
+useAria2cDownloader="yes"
+timeOption=""
 customName=""
 
-while getopts u:o:f:t:m:a:n:h: option
+while getopts u:o:f:m:a:t:n:h: option
 do
 	case "${option}" in
-	u)  	
-		if [[ -z ${OPTARG} ]] ; then showInfo "Error: The \e[1mVideo url \e[0m value i.e -u is not set! "; exit 1; else url=${OPTARG}; fi ;;
+	u)  url=${OPTARG} ;;
   o)	output=${OPTARG} ;;
-  f)
-		if [[ -z ${OPTARG} ]] ; then showInfo "Error: The \e[1mVideo format \e[0m value i.e -f is is not set! "; exit 1; else video=${OPTARG}; fi ;;
-  t) timeOption="--download-sections "${OPTARG}"" ;;
+  f)  video=${OPTARG} ;;
   m)
     if [[ ${OPTARG} == "video" ]] ||  [[ ${OPTARG} == "audio" ]]
     then mode=${OPTARG};
-    else showInfo "Error: The \e[1mMode\e[0m value is incorrect i.e -m must be either "video" or "audio"! "; exit 1; 
+    else showHelp "Error: The \e[1mMode\e[0m value is incorrect i.e -m must be either "video" or "audio"! "; exit 1; 
     fi ;;
   a) 
     if [[ ${OPTARG} == "yes" ]] || [[ ${OPTARG} == "no" ]]
     then useAria2cDownloader=${OPTARG};
-    else showInfo "Error: The \e[1mAria2c Downloader\e[0m activation value is incorrect i.e -a must be either "yes" or "no"! "; exit 1; 
+    else showHelp "Error: The \e[1mAria2c Downloader\e[0m activation value is incorrect i.e -a must be either "yes" or "no"! "; exit 1; 
     fi ;;
-  n) customName=${OPTARG} ;;
+  t)  timeOption="--download-sections "${OPTARG}"" ;;
+  n)  customName=${OPTARG} ;;
   h) 
-    if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit 1; else showHelp; exit 1; fi;;
-  *) 	showInfo "Error: Invalid option selected!"; exit 1;;
+    if ! [[ ${OPTARG} == "elp" ]] ; then showHelp "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit 1; else showHelp; exit 1; fi;;
+  *) 	showHelp "Error: Invalid option selected!"; exit 1;;
   esac
 done
+
+if [[ $url == "" ]]; then showHelp "Error: The \e[1mVideo url \e[0m value is not set i.e -u "; exit 1; fi
+if [[ $video == "" ]] then showHelp "Error: The \e[1mVideo format \e[0m value is is not set i.e -f "; exit 1; fi
 
 echo
 echo "#######################################################"
@@ -115,11 +125,11 @@ fi
 fileName=""
 
 if [[ $mode == "video" ]]
-then fileName=$(yt-dlp -o "%(title)s^%(ext)s" -f "$video" --get-filename --skip-download "$url")
-else fileName=$(yt-dlp --get-filename --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s^%(ext)s" "$url")
+then fileName=$(yt-dlp -4 -o "%(title)s^%(ext)s" -f "$video" --get-filename --skip-download "$url")
+else fileName=$(yt-dlp -4 --get-filename --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s^%(ext)s" "$url")
 fi
 
-fileTitle=$([ $customName == "" ] && echo "${fileName%^*}" || echo "$customName")
+fileTitle=$([[ $customName == "" ]] && echo ${fileName%^*} || echo $customName)
 fileExtension=${fileName#*^}
 
 if [[ ${videoExtensions[@]} =~ $fileExtension ]] || [[ ${audioExtensions[@]} =~ $fileExtension ]]
@@ -132,8 +142,8 @@ showInfo "Downloading file \e[1m$fileTitle.$fileExtension\e[0m and converting it
 if [[ $mode == "video" ]]
 then
   if [[ $useAria2cDownloader == "yes" ]]
-  then time yt-dlp -i $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
-  else time yt-dlp -i $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
+  then time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+  else time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
   fi
 
   if [[ -f "$fileTitle-FILE.en.srt" ]]
@@ -149,8 +159,8 @@ then
 elif [[ $mode == "audio" ]]
 then
   if [[ $useAria2cDownloader == "yes" ]]
-  then  time yt-dlp --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" "$url"
-  else  time yt-dlp --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail "$url"
+  then  time yt-dlp -4 --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" "$url"
+  else  time yt-dlp -4 --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail "$url"
   fi
 fi
 
