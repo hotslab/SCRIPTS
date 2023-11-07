@@ -59,7 +59,7 @@ url=""
 video=""
 output="mp4"
 mode="video"
-useAria2cDownloader="yes"
+useAria2cDownloader="no"
 timeOption=""
 customName=""
 
