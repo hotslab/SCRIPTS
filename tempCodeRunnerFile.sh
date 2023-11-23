@@ -1,0 +1,1 @@
+for wavFile in *.wav 
