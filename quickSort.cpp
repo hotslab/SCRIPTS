@@ -3,9 +3,9 @@
 #include <time.h>
 #include <cstdlib>
 
-void quickSort(int array[], int arraySize, int start, int end);
-int partition(int array[], int arraySize, int start, int end);
-void printArray(int array[], int &arraySize);
+void quickSort(int array[], int &arraySize, int start, int end);
+int partition(int array[], int &arraySize, int &start, int &end);
+void printArray(int array[], int &arraySize, const char message[]);
 
 int main()
 {
@@ -20,47 +20,43 @@ int main()
     int array[arraySize];
     for (int i = 0; i < arraySize; i++)
         array[i] = rand() % integerBound;
-    printArray(array, arraySize);
-    quickSort(array, arraySize, 0, arraySize -1);
-    printArray(array, arraySize);
+    printArray(array, arraySize, "Unordered array");
+    quickSort(array, arraySize, 0, arraySize - 1);
+    printArray(array, arraySize, "Ordered List");
     return 0;
 }
 
-void quickSort(int array[], int arraySize, int start, int end)
+void quickSort(int array[], int &arraySize, int start, int end)
 {
-    std::cout << "Start => " << start << " End => " << end << " Condtion => " <<(end <= start) << '\n';
     if (end <= start) return;
     int pivot = partition(array, arraySize, start, end);
-    std::cout << pivot << " is the pivot" << '\n';
     quickSort(array, arraySize, start, pivot - 1);
     quickSort(array, arraySize, pivot + 1, end);
 }
 
-int partition(int array[], int arraySize, int start, int end)
+int partition(int array[], int &arraySize, int &start, int &end)
 {
-    std::cout << "Partion is being run" << '\n';
     int pivot = array[end];
-    int startIndex = start - 1;
-
+    int shadowIndex = start - 1;
     for (int i = start; i <= end; i++)
     {
         if (array[i] < pivot) {
-            startIndex++;
-            int temp = array[startIndex];
-            array[startIndex] = array[i];
+            shadowIndex++;
+            int temp = array[shadowIndex];
+            array[shadowIndex] = array[i];
             array[i] = temp;
         }
     }
-    int temp = array[startIndex];
-    array[startIndex] = array[end];
+    shadowIndex++;
+    int temp = array[shadowIndex];
+    array[shadowIndex] = array[end];
     array[end] = temp;
-
-    return startIndex;
+    return shadowIndex;
 }
 
-void printArray(int array[], int &arraySize)
+void printArray(int array[], int &arraySize, const char message[])
 {
-    std::cout << '\n';
+    std::cout << message << '\n';
     for (int i = 0; i < arraySize; i++)
     {
         if (i == 0)
@@ -70,3 +66,4 @@ void printArray(int array[], int &arraySize)
             std::cout << "]" << '\n';
     }
 }
+
