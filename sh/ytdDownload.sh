@@ -65,8 +65,8 @@ customName=""
 
 while getopts u:o:f:m:a:t:n:h: option
 do
-	case "${option}" in
-	u)  url=${OPTARG} ;;
+  case "${option}" in
+  u)  url=${OPTARG} ;;
   o)	output=${OPTARG} ;;
   f)  video=${OPTARG} ;;
   m)
@@ -146,16 +146,22 @@ then
   else time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
   fi
 
-  if [[ -f "$fileTitle-FILE.en.srt" ]]
-  then 
-    showInfo "The subtitle file found is \e[1m $fileTitle-FILE.en.srt \e[0m"
-    time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -i "$fileTitle-FILE.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$output"
-    rm "$fileTitle-FILE.en.srt"
+  if ! [[ $timeOption == "" ]]
+  then
+    if [[ -f "$fileTitle-FILE.en.srt" ]]
+    then 
+      showInfo "The subtitle file found is \e[1m $fileTitle-FILE.en.srt \e[0m"
+      time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -i "$fileTitle-FILE.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$output"
+      rm "$fileTitle-FILE.en.srt"
+    else
+      showInfo "No subtitle found..."
+      time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$output"
+    fi
+    rm "$fileTitle-FILE.$fileExtension"
   else
-    showInfo "No subtitle found..."
-    time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$output"
+    if [[ -f "$fileTitle-FILE.en.srt" ]]; then rm "$fileTitle-FILE.en.srt"; fi
+    mv "$fileTitle-FILE.$fileExtension" "$fileTitle.$fileExtension"
   fi
-  rm "$fileTitle-FILE.$fileExtension"
 elif [[ $mode == "audio" ]]
 then
   if [[ $useAria2cDownloader == "yes" ]]
