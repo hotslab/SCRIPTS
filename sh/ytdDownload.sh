@@ -57,7 +57,7 @@ if [[ -v $1 ]]; then showHelp "No options were passed"; exit 1; fi
 # Default parameters
 url=""
 video=""
-output="mp4"
+output=""
 mode="video"
 useAria2cDownloader="no"
 timeOption=""
@@ -88,7 +88,8 @@ do
 done
 
 if [[ $url == "" ]]; then showHelp "Error: The \e[1mVideo url \e[0m value is not set i.e -u "; exit 1; fi
-if [[ $video == "" ]] then showHelp "Error: The \e[1mVideo format \e[0m value is is not set i.e -f "; exit 1; fi
+if [[ $output == "" ]]; then showHelp "Error: The \e[1mOutput format  \e[0m is not set i.e -m "; exit 1; fi
+if [[ $video == "" ]] && [[ $mode == "video" ]] then showHelp "Error: The \e[1mVideo format \e[0m value is not set i.e -f "; exit 1; fi
 
 echo
 echo "#######################################################"
@@ -146,7 +147,7 @@ then
   else time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
   fi
 
-  if ! [[ $timeOption == "" ]]
+  if [[ $timeOption == "" ]]
   then
     if [[ -f "$fileTitle-FILE.en.srt" ]]
     then 
@@ -159,14 +160,20 @@ then
     fi
     rm "$fileTitle-FILE.$fileExtension"
   else
-    if [[ -f "$fileTitle-FILE.en.srt" ]]; then rm "$fileTitle-FILE.en.srt"; fi
-    mv "$fileTitle-FILE.$fileExtension" "$fileTitle.$fileExtension"
+    showInfo "The time option i.e \e[1m -t $timeOption \e[0m was selected so \e[1m $output \e[0m format was ignored, and the original file extension \e[1m $fileExtension \e[0m was used instead."
+    if [[ -f "$fileTitle-FILE.en.srt" ]]
+    then
+      time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -i "$fileTitle-FILE.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$fileExtension"
+      rm "$fileTitle-FILE.en.srt";
+    else 
+      mv "$fileTitle-FILE.$fileExtension" "$fileTitle.$fileExtension" 
+    fi
   fi
 elif [[ $mode == "audio" ]]
 then
   if [[ $useAria2cDownloader == "yes" ]]
-  then  time yt-dlp -4 --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" "$url"
-  else  time yt-dlp -4 --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail "$url"
+  then  time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" "$url"
+  else  time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail "$url"
   fi
 fi
 
