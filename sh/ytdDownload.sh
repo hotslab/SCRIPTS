@@ -162,12 +162,9 @@ then
   else
     showInfo "The time option i.e \e[1m -t $timeOption \e[0m was selected so \e[1m $output \e[0m format was ignored, and the original file extension \e[1m $fileExtension \e[0m was used instead."
     if [[ -f "$fileTitle-FILE.en.srt" ]]
-    then
-      time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -i "$fileTitle-FILE.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$fileExtension"
-      rm "$fileTitle-FILE.en.srt";
-    else 
-      mv "$fileTitle-FILE.$fileExtension" "$fileTitle.$fileExtension" 
+    then showInfo "Subitle file exists named $fileTitle-FILE.en.srt. Please manually add them to the file if needed and delete the file."
     fi
+    mv "$fileTitle-FILE.$fileExtension" "$fileTitle.$fileExtension" 
   fi
 elif [[ $mode == "audio" ]]
 then
