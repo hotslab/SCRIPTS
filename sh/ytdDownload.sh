@@ -110,7 +110,7 @@ echo "#######################################################"
 echo
 
 
-audioExtensions=("3gp" "aa" "aac" "aax" "act" "aiff" "alac" "amr" "ape" "au" "awb" "dss" "dvf" "flac" "gsm" "iklax" "ivs" "m4a" "m4b" "m4p" "mmf" "movpkg" "mp3" "mpc" "msv" "nmf" "ogg" "oga" "mogg" "opus" "ra" "rm" "raw" "rf64" "sln" "tta" "voc" "vox" "wav" "wma" "wv" "webm" "8svx" "cda")
+audioExtensions=("3gp" "aa" "aac" "aax" "act" "aiff" "alac" "amr" "ape" "au" "awb" "dss" "dvf" "flac" "gsm" "iklax" "ivs" "m4a" "m4b" "m4p" "mmf" "movpkg" "mp3" "mpc" "msv" "nmf" "ogg" "oga" "mogg" "opus" "ra" "rm" "raw" "rf64" "sln" "tta" "voc" "vox" "wav" "wma" "wv" "webm" "8svx" "cda", "wav", "webm")
 videoExtensions=("webm" "mkv" "vob" "ogv" "og" "drc" "gif" "gifv" "mng" "avi" "mt" "m2ts" "ts" "mov" "q" "wmv" "yuv" "rm" "rmvb" "viv" "asf" "amv" "mp4" "m4" "mpg" "mp2" "mpeg" "mpe" "mp" "m2v" "m4v" "svi" "3gp" "3g2" "mxf" "roq" "nsv" "flv" "f4v" "f4p" "f4a" "f4")
 
 if [[ $mode == "video" ]] && [[ ${videoExtensions[@]} =~ $output ]]
