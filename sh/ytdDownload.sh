@@ -57,7 +57,7 @@ if [[ -v $1 ]]; then showHelp "No options were passed"; exit 1; fi
 # Default parameters
 url=""
 video=""
-output=""
+output="mp4"
 mode="video"
 useAria2cDownloader="no"
 timeOption=""
@@ -169,8 +169,8 @@ then
 elif [[ $mode == "audio" ]]
 then
   if [[ $useAria2cDownloader == "yes" ]]
-  then  time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" "$url"
-  else  time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail "$url"
+  then  time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+  else  time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
   fi
 fi
 
