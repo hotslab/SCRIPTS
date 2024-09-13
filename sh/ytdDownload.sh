@@ -23,6 +23,8 @@ showHelp()
   echo -e '\e[1m -a \e[0m     Use aria2c to download i.e. pass "yes" to activate or "no" to deactivate '
   echo -e '\e[1m -t \e[0m     Time duration to cut from video e.g. "*34:38-49:37" where format is "*HH:mm:ss-HH:mm:ss" '
   echo -e '\e[1m -n \e[0m     Custom file name i.e. \e[1m "My Video" \e[0m'
+  echo -e '\e[1m -b \e[0m     Select browser to use cookies from i.e. \e[1m "brave" \e[0m'
+  echo -e '\e[1m -e \e[0m     Get extensions to select from i.e. pass "yes" to fetch or "no" to progress normaly'
   echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen \e[0m"
   echo
   echo  "======================================================"
@@ -51,6 +53,8 @@ trap cleanUp INT SIGINT SIGTERM
 #unset m
 #unset a
 #unset n
+#unset b
+#unset e
 
 if [[ -v $1 ]]; then showHelp "No options were passed"; exit 1; fi
 
@@ -62,11 +66,14 @@ mode="video"
 useAria2cDownloader="no"
 timeOption=""
 customName=""
+browser="none"
+getExtensions="no"
 
-while getopts u:o:f:m:a:t:n:h: option
+while getopts u:e:o:f:m:a:t:n:b:h: option
 do
   case "${option}" in
   u)  url=${OPTARG} ;;
+  e)  getExtensions=${OPTARG} ;;
   o)	output=${OPTARG} ;;
   f)  video=${OPTARG} ;;
   m)
@@ -81,6 +88,8 @@ do
     fi ;;
   t)  timeOption="--download-sections "${OPTARG}"" ;;
   n)  customName=${OPTARG} ;;
+  b)  
+    if [[ ${OPTARG} != "none" ]] then browser=${OPTARG}; fi ;;
   h) 
     if ! [[ ${OPTARG} == "elp" ]] ; then showHelp "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit 1; else showHelp; exit 1; fi;;
   *) 	showHelp "Error: Invalid option selected!"; exit 1;;
@@ -88,7 +97,20 @@ do
 done
 
 if [[ $url == "" ]]; then showHelp "Error: The \e[1mVideo url \e[0m value is not set i.e -u "; exit 1; fi
+
+if [[ $getExtensions == "yes" ]]
+then
+  if [[ $browser == "none" ]]
+  then time yt-dlp -F4 "$url"; exit 1;
+  else time yt-dlp -F4 --cookies-from-browser "$browser"  "$url"; exit 1;
+  fi 
+elif [[ $getExtensions != "no" ]]
+then 
+  showHelp "Error: The \e[1mExtensions\e[0m value is incorrect i.e -e must be either "yes" or "no"! "; exit 1; 
+fi
+
 if [[ $output == "" ]]; then showHelp "Error: The \e[1mOutput format  \e[0m is not set i.e -m "; exit 1; fi
+
 if [[ $video == "" ]] && [[ $mode == "video" ]] then showHelp "Error: The \e[1mVideo format \e[0m value is not set i.e -f "; exit 1; fi
 
 echo
@@ -126,8 +148,16 @@ fi
 fileName=""
 
 if [[ $mode == "video" ]]
-then fileName=$(yt-dlp -4 -o "%(title)s^%(ext)s" -f "$video" --get-filename --skip-download "$url")
-else fileName=$(yt-dlp -4 --get-filename --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s^%(ext)s" "$url")
+then
+  if [[ $browser == "none" ]]
+  then fileName=$(yt-dlp -4 -o "%(title)s^%(ext)s" -f "$video" --get-filename --skip-download "$url")
+  else fileName=$(yt-dlp -4 -o "%(title)s^%(ext)s" -f "$video" --get-filename --skip-download --cookies-from-browser "$browser" "$url")
+  fi
+else 
+  if [[ $browser == "none" ]]
+  then fileName=$(yt-dlp -4 --get-filename --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s^%(ext)s" "$url")
+  else fileName=$(yt-dlp -4 --get-filename --audio-quality 0 --extract-audio --audio-format "$output" -o "%(title)s^%(ext)s" --cookies-from-browser "$browser" "$url")
+  fi
 fi
 
 fileTitle=$([[ $customName == "" ]] && echo ${fileName%^*} || echo $customName)
@@ -143,8 +173,16 @@ showInfo "Downloading file \e[1m$fileTitle.$fileExtension\e[0m and converting it
 if [[ $mode == "video" ]]
 then
   if [[ $useAria2cDownloader == "yes" ]]
-  then time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
-  else time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
+  then 
+    if [[ $browser == "none" ]]
+    then time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+    else time yt-dlp -i4 $timeOption --cookies-from-browser "$browser" --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+    fi
+  else 
+    if [[ $browser == "none" ]]
+    then time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
+    else time yt-dlp -i4 $timeOption --cookies-from-browser "$browser" --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
+    fi
   fi
 
   if [[ $timeOption == "" ]]
@@ -169,8 +207,16 @@ then
 elif [[ $mode == "audio" ]]
 then
   if [[ $useAria2cDownloader == "yes" ]]
-  then  time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
-  else  time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
+  then  
+    if [[ $browser == "none" ]]
+    then time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+    else time yt-dlp -4 $timeOption --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+    fi
+  else  
+    if [[ $browser == "none" ]]
+    then time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
+    else time yt-dlp -4 $timeOption --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
+    fi
   fi
 fi
 
