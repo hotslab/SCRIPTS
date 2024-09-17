@@ -43,9 +43,10 @@ cleanUp() {
 trap cleanUp INT SIGINT SIGTERM
 
 # Default parameters
+codecs=("av1", "hevc", "h264")
 inputfiletype="mp4"
 outputfiletype="mp4"
-codec="h265"
+codec="hevc"
 removeFile="n"
 path="$(pwd)/"
 
@@ -54,7 +55,8 @@ do
 	case "${option}" in
         i) inputfiletype=${OPTARG};;
         o) outputfiletype=${OPTARG};;
-        c) codec=${OPTARG};;
+        c)
+          if [ ${OPTARG} != "" ]; then codec=${OPTARG}; fi ;;
         r) 
           if [ ${OPTARG} == "y" ] || [ ${OPTARG} == "n" ] ; then $removeFile=${OPTARG}; else showInfo "Error: The \e[1mremove folder\e[0m value should either be \e[1myes\e[0m or \e[1mno\e[0m."; exit; fi ;;
         p)
@@ -67,6 +69,12 @@ do
     esac
 done
 
+if [[ ! ${codecs[@]} =~ $output ]]
+then 
+  showHelp "Error: The \e[1mCodec\e[0m value is incorrect i.e -c must be either "av1", "hevc" or "h264"! "
+  exit 1
+fi
+
 echo
 echo "#######################################################"
 echo "#######################################################"
@@ -76,7 +84,7 @@ echo
 echo "Input file format                     =>  $inputfiletype"
 echo "Output file format                    =>  $outputfiletype"
 echo "Video codec                           =>  $codec"
-echo "Remove conversion folders?            =>  $removeFile"
+echo "Remove original video?                =>  $removeFile"
 echo "Video directory                       =>  $path"
 echo
 echo "#######################################################"
@@ -93,7 +101,7 @@ then
   if [ ! -d "$path/CON" ]; then mkdir -p "$path/CON"; fi
   if [ ! -d "$path/DONE" ]; then mkdir -p "$path/DONE"; fi
 
-  for file in "*.{$inputfiletype}"
+  for file in *.$inputfiletype
   do
     
     count+=1
