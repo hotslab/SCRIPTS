@@ -113,7 +113,9 @@ then
     then
 
       count+=1
-      showInfo "Started converting video file No. $count of $totalfiles titled '$file'..."
+      fileSize=$( wc -c "$file" | awk '{print $1}' )
+      
+      showInfo "Started converting video file No. $count of $totalfiles titled '$file', with file size $fileSize bytes."
 
       urlremoved="${file##*/}"
       filetyperemoved="${urlremoved%.*}"
