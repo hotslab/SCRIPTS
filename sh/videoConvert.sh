@@ -44,13 +44,14 @@ trap cleanUp INT SIGINT SIGTERM
 
 # Default parameters
 codecs=("av1", "hevc", "h264")
+chargingStates=('fully-charged', 'charging')
 inputfiletype="mp4"
 outputfiletype="mp4"
 codec="hevc"
 removeFile="n"
 path="$(pwd)/"
 
-while getopts d:i:o:v:a:s:r:f:x:l:h: option
+while getopts i:o:c:r:p:h: option
 do
 	case "${option}" in
         i) inputfiletype=${OPTARG};;
@@ -58,7 +59,7 @@ do
         c)
           if [ ${OPTARG} != "" ]; then codec=${OPTARG}; fi ;;
         r) 
-          if [ ${OPTARG} == "y" ] || [ ${OPTARG} == "n" ] ; then $removeFile=${OPTARG}; else showInfo "Error: The \e[1mremove folder\e[0m value should either be \e[1myes\e[0m or \e[1mno\e[0m."; exit; fi ;;
+          if [ ${OPTARG} = "y" ] || [ ${OPTARG} = "n" ] ; then removeFile=${OPTARG}; else showInfo "Error: The \e[1mremove folder\e[0m value should either be \e[1myes\e[0m or \e[1mno\e[0m."; exit; fi ;;
         p)
           folder=${OPTARG}
           if ! [[ $folder == */ ]]; then folder="$folder/"; showInfo "String has been changed to $folder"; fi 
@@ -104,34 +105,49 @@ then
   for file in *.$inputfiletype
   do
     
-    count+=1
-    showInfo "Started converting video file No. $count of $totalfiles titled '$file'..."
-
-    urlremoved="${file##*/}"
-    filetyperemoved="${urlremoved%.*}"
     
-    if [[ $codec == "av1" ]]
-    then
-      ffmpeg -i "$file" -c:v libsvtav1 -preset 5 -crf 32 -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
-    elif [[ $mode == "hevc" ]]
-    then 
-      ffmpeg -i "$file" -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf 27 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
-    else
-      ffmpeg -i "$file" -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf 22 -tune film -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
-    fi
+    chargingState=$(upower -i $(upower -e | grep '/battery') | grep --color=never -E state|xargs|cut -d' ' -f2)
+    batteryPower=$(upower -i $(upower -e | grep '/battery') | grep --color=never -E percentage|xargs|cut -d' ' -f2|sed s/%//)
 
-    if [ ! -f "${path}CON/${filetyperemoved}.${outputfiletype}" ]
+    if [[ ${chargingStates[@]} =~ $chargingState ]] || [[ $batteryPower -gt 50 ]]
     then
-      showInfo "${filetyperemoved}.${outputfiletype} was not found after conversion!"
-    else
-      if [ $removeFile == "y" ]  
+
+      count+=1
+      showInfo "Started converting video file No. $count of $totalfiles titled '$file'..."
+
+      urlremoved="${file##*/}"
+      filetyperemoved="${urlremoved%.*}"
+      
+      if [[ $codec == "av1" ]]
       then
-        rm -R "$file"
-        showInfo "The video file No. $count of $totalfiles titled '$file' has been converted to the CON folder, and the original file deleted."
+        showInfo "Converting using av1..."
+        time ffmpeg -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf 32 -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+      elif [[ $codec == "hevc" ]]
+      then 
+        showInfo "Converting using hevc..."
+        time ffmpeg -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf 27 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
       else
-        mv "$file" "${path}DONE/${urlremoved}"
-        showInfo "The video file No. $count of $totalfiles titled '$file' has been converted to the CON folder, and the original file moved to the DONE folder."
+        showInfo "Converting using h264..."
+        time ffmpeg -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf 22 -tune film -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
       fi
+
+      if [ ! -f "${path}CON/${filetyperemoved}.${outputfiletype}" ]
+      then
+        showInfo "${filetyperemoved}.${outputfiletype} was not found after conversion!"
+      else
+        if [ $removeFile == "y" ]  
+        then
+          rm -R "$file"
+          showInfo "The video file No. $count of $totalfiles titled '$file' has been converted to the CON folder, and the original file deleted."
+        else
+          mv "$file" "${path}DONE/${urlremoved}"
+          showInfo "The video file No. $count of $totalfiles titled '$file' has been converted to the CON folder, and the original file moved to the DONE folder."
+        fi
+      fi
+
+    else 
+      showInfo "Error: Battery power is $batteryPower%. EXiting script to save battery energy and protect it from overdraw."
+      exit 1
     fi
 
   done
