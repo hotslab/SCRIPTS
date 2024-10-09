@@ -13,7 +13,7 @@ showHelp()
   echo
   echo -e "\e[1mConvert Videos\e[0m"
   echo
-  echo "Syntax: \e[1m bash videoConvert.sh [-i|o|c|r|p|help] \e[0m"
+  echo "Syntax: \e[1m bash videoConvert.sh [-i|o|c|r|p|g|help] \e[0m"
   echo
   echo "Options:"
   echo -e "\e[1m -i \e[0m     Video input type e.g mp4"
@@ -21,6 +21,8 @@ showHelp()
   echo -e "\e[1m -c \e[0m     Conversion codec i.e. av1, hevc or h264"
   echo -e '\e[1m -r \e[0m     Delete original  file after finishing  i.e. either "y" or "n" '
   echo -e '\e[1m -p \e[0m     Path to where files reside in using the full path name e.g. /home/Videos - default is script location i.e. \e[1m $(pwd) \e[0m'
+  echo -e '\e[1m -g \e[0m     Use gpu i.e. either "y" or "n" - default "y" '
+  echo -e '\e[1m -l \e[0m     Gpu path i.e. \e[1m /dev/dri/renderD128 \e[0m'
   echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen \e[0m"
   echo
   echo  "======================================================"
@@ -50,8 +52,10 @@ outputfiletype="mp4"
 codec="hevc"
 removeFile="n"
 path="$(pwd)/"
+gpu="y"
+gpuLocation="/dev/dri/renderD128"
 
-while getopts i:o:c:r:p:h: option
+while getopts i:o:c:r:p:g:l:h: option
 do
 	case "${option}" in
         i) inputfiletype=${OPTARG};;
@@ -64,6 +68,8 @@ do
           folder=${OPTARG}
           if ! [[ $folder == */ ]]; then folder="$folder/"; showInfo "String has been changed to $folder"; fi 
           if [ ! -d "$folder" ]; then showInfo "Error: The $folder directory does not exist!"; exit; else path=$folder; fi ;;
+        g) gpu=${OPTARG};;
+        l) gpuLocation=${OPTARG};;
         h) 
           if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit; else showHelp; exit; fi;;
         *) showInfo "Error: Invalid option selected!"; exit;;
@@ -102,7 +108,7 @@ then
   if [ ! -d "$path/CON" ]; then mkdir -p "$path/CON"; fi
   if [ ! -d "$path/DONE" ]; then mkdir -p "$path/DONE"; fi
 
-  for file in *.$inputfiletype
+  for file in $path*.$inputfiletype
   do
     
     
@@ -122,15 +128,36 @@ then
       
       if [[ $codec == "av1" ]]
       then
+        
         showInfo "Converting using av1..."
-        time ffmpeg -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf 32 -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+        if [[ $gpu == "y" ]]
+        then 
+          showInfo "No gpu functionality for av1 conversion added yet! Use software decoder."
+        else 
+          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf 32 -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+        fi
+
       elif [[ $codec == "hevc" ]]
       then 
+        
         showInfo "Converting using hevc..."
-        time ffmpeg -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf 27 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+        if [[ $gpu == "y" ]]
+        then 
+          time ffmpeg -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp 34 -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+        else
+          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf 27 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+        fi
+
       else
+        
         showInfo "Converting using h264..."
-        time ffmpeg -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf 22 -tune film -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+        if [[ $gpu == "y" ]]
+        then 
+          showInfo "No gpu functionality for h264 conversion added yet! Use software decoder."
+        else
+          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf 22 -tune film -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+        fi
+
       fi
 
       if [ ! -f "${path}CON/${filetyperemoved}.${outputfiletype}" ]
