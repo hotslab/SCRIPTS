@@ -13,7 +13,7 @@ showHelp()
   echo
   echo -e "\e[1mConvert Videos\e[0m"
   echo
-  echo "Syntax: \e[1m bash videoConvert.sh [-i|o|c|r|p|g|help] \e[0m"
+  echo "Syntax: \e[1m bash videoConvert.sh [-i|o|c|r|p|g|l|q|help] \e[0m"
   echo
   echo "Options:"
   echo -e "\e[1m -i \e[0m     Video input type e.g mp4"
@@ -23,6 +23,7 @@ showHelp()
   echo -e '\e[1m -p \e[0m     Path to where files reside in using the full path name e.g. /home/Videos - default is script location i.e. \e[1m $(pwd) \e[0m'
   echo -e '\e[1m -g \e[0m     Use gpu i.e. either "y" or "n" - default "y" '
   echo -e '\e[1m -l \e[0m     Gpu path i.e. \e[1m /dev/dri/renderD128 \e[0m'
+  echo -e '\e[1m -q \e[0m     Video quality scale i.e. \e[1m crf or qb for vaapi \e[0m - defaults to those hardcoded for each encoder in this script'
   echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen \e[0m"
   echo
   echo  "======================================================"
@@ -54,8 +55,9 @@ removeFile="n"
 path="$(pwd)/"
 gpu="y"
 gpuLocation="/dev/dri/renderD128"
+videoQuality=""
 
-while getopts i:o:c:r:p:g:l:h: option
+while getopts i:o:c:r:p:g:l:q:h: option
 do
 	case "${option}" in
         i) inputfiletype=${OPTARG};;
@@ -70,6 +72,7 @@ do
           if [ ! -d "$folder" ]; then showInfo "Error: The $folder directory does not exist!"; exit; else path=$folder; fi ;;
         g) gpu=${OPTARG};;
         l) gpuLocation=${OPTARG};;
+        q) videoQuality=${OPTARG};;
         h) 
           if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit; else showHelp; exit; fi;;
         *) showInfo "Error: Invalid option selected!"; exit;;
@@ -128,13 +131,12 @@ then
       
       if [[ $codec == "av1" ]]
       then
-        
         showInfo "Converting using av1..."
         if [[ $gpu == "y" ]]
         then 
           showInfo "No gpu functionality for av1 conversion added yet! Use software decoder."
         else 
-          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf 32 -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
         fi
 
       elif [[ $codec == "hevc" ]]
@@ -143,9 +145,9 @@ then
         showInfo "Converting using hevc..."
         if [[ $gpu == "y" ]]
         then 
-          time ffmpeg -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp 33 -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          time ffmpeg -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp ${videoQuality:-33} -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
         else
-          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf 27 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
         fi
 
       else
@@ -155,7 +157,7 @@ then
         then 
           showInfo "No gpu functionality for h264 conversion added yet! Use software decoder."
         else
-          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf 22 -tune film -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
         fi
 
       fi
