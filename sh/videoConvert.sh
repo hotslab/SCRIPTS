@@ -143,7 +143,7 @@ then
         showInfo "Converting using hevc..."
         if [[ $gpu == "y" ]]
         then 
-          time ffmpeg -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp 34 -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          time ffmpeg -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp 33 -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
         else
           time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf 27 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
         fi
