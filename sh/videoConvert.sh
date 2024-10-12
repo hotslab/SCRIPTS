@@ -114,7 +114,7 @@ then
   if [ ! -d "$path/CON" ]; then mkdir -p "$path/CON"; fi
   if [ ! -d "$path/DONE" ]; then mkdir -p "$path/DONE"; fi
 
-  for file in $path*.$inputfiletype
+  for file in "$path"*.$inputfiletype
   do
     
     
