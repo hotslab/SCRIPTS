@@ -5,7 +5,7 @@ set -e
 showHelp()
 {
   # Show optional  error message
-  if ! [[ -v $1 ]]; then showInfo "$1"; fi
+  if [[ ! $1  == "" ]]; then showInfo "$1"; fi
 
   # Display Help
   echo
@@ -15,15 +15,15 @@ showHelp()
   echo
   echo -e "Syntax: \e[1mbash videoConvert.sh [-i|o|c|r|p|g|l|q|help]\e[0m"
   echo
-  echo "Options:"
-  echo -e "\e[1m -i \e[0m     Video input type e.g mp4"
-  echo -e "\e[1m -o \e[0m     Video output type e.g mp4"
-  echo -e "\e[1m -c \e[0m     Conversion codec i.e. av1, hevc or h264"
-  echo -e '\e[1m -r \e[0m     Delete original  file after finishing  i.e. either "y" or "n" - default "y"'
-  echo -e '\e[1m -p \e[0m     Path to where files reside in using the full path name e.g. /home/Videos - default is script location i.e. \e[1m$(pwd)\e[0m'
-  echo -e '\e[1m -g \e[0m     Use gpu i.e. either "y" or "n" - default "y" '
+  echo -e "\e[1mOptions\e[0m:"
+  echo -e "\e[1m -i \e[0m     Video input type e.g default is \e[1mmp4\e[0m"
+  echo -e "\e[1m -o \e[0m     Video output type e.g default is \e[1mmp4\e[0m"
+  echo -e "\e[1m -c \e[0m     Conversion codec i.e. \e[1mav1, hevc or h264\e[0m"
+  echo -e '\e[1m -r \e[0m     Delete original  file after finishing  i.e. either \e[1my\e[0m or \e[1mn\e[0m - default \e[1my\e[0m '
+  echo -e '\e[1m -p \e[0m     Path to where files reside in using the full path name e.g. \e[1m/home/Videos\e[0m - default is script location i.e. \e[1m$(pwd)\e[0m'
+  echo -e '\e[1m -g \e[0m     Use gpu i.e. either \e[1my\e[0m or \e[1mn\e[0m - default \e[1my\e[0m '
   echo -e '\e[1m -l \e[0m     Gpu path i.e. \e[1m/dev/dri/renderD128\e[0m'
-  echo -e '\e[1m -q \e[0m     Video quality scale i.e. \e[1mcrf or qb for vaapi\e[0m - defaults to those hardcoded for each encoder in this script'
+  echo -e '\e[1m -q \e[0m     Video quality scale i.e. \e[1mcrf\e[0m or \e[1mqb\e[0m for \e[1mvaapi\e[0m - defaults to those hardcoded for each encoder in this script'
   echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen\e[0m"
   echo
   echo  "======================================================"
@@ -96,21 +96,21 @@ echo "#######################################################"
 echo
 echo "PARAMETERS USED IN CONVERSION "
 echo
-echo "Input file format                     =>  $inputfiletype"
-echo "Output file format                    =>  $outputfiletype"
-echo "Video codec                           =>  $codec"
-echo "Remove original video?                =>  $removeFile"
-echo "Video directory                       =>  $path"
-echo "Using gpu?                            =>  $gpu"
-echo "Gpu path                              =>  $gpuLocation"
-echo "Video quality selected                =>  ${videoQuality:-'default'}"
+echo "Input file format                     =>  \e[1m$inputfiletype\e[0m"
+echo "Output file format                    =>  \e[1m$outputfiletype\e[0m"
+echo "Video codec                           =>  \e[1m$codec\e[0m"
+echo "Remove original video?                =>  \e[1m$removeFile\e[0m"
+echo "Video directory                       =>  \e[1m$path\e[0m"
+echo "Using gpu?                            =>  \e[1m$gpu\e[0m"
+echo "Gpu path                              =>  \e[1m$gpuLocation\e[0m"
+echo "Video quality selected                =>  \e[1m${videoQuality:-'default'}\e[0m"
 echo
 echo "#######################################################"
 echo "#######################################################"
 echo
 
 totalfiles=$(find "$path" -maxdepth 1 -name "*.$inputfiletype" | wc -l)
-showInfo "There is $totalfiles video files in this folder."
+showInfo "There is \e[1m$totalfiles\e[0m video files in this folder with extension \e[1m$inputfiletype\e[0m."
 declare -i count=0
 
 if [[ $totalfiles -gt 0 ]]
@@ -135,20 +135,20 @@ then
       count+=1
       fileSize=$( wc -c "$file" | awk '{print $1}' )
       
-      showInfo "Started converting video file No. $count of $totalfiles titled '$file', with file size $fileSize bytes."
+      showInfo "Started converting video file No. $count of $totalfiles titled \e[1m$file\e[0m, with file size \e[1m$fileSize\e[0m bytes."
 
       urlremoved="${file##*/}"
       filetyperemoved="${urlremoved%.*}"
       
       if [[ $codec == "av1" ]]
       then
-        showInfo "Converting using av1..."
+        showInfo "Converting using \e[1mav1\e[0m..."
 
         regex=\\B\[JXAV1\]\\B
         
         if [[ $file =~ $regex ]]
         then 
-          showInfo "$file already exists. Skipping converting using av1 codec."
+          showInfo "\e[1m$file\e[0m already exists. Skipping converting using av1 codec."
         else
           if [[ $gpu == "y" ]]
           then 
@@ -161,13 +161,13 @@ then
       elif [[ $codec == "hevc" ]]
       then 
         
-        showInfo "Converting using hevc..."
+        showInfo "Converting using \e[1mhevc\e[0m..."
 
         regex=\\B\[JXHEVC\]\\B
         
         if [[ $file =~ $regex ]]
         then 
-          showInfo "$file already exists. Skipping converting using hevc codec."
+          showInfo "\e[1m$file\e[0m already exists. Skipping converting using hevc codec."
         else
           if [[ $gpu == "y" ]]
           then 
@@ -179,13 +179,13 @@ then
 
       else
         
-        showInfo "Converting using h264..."
+        showInfo "Converting using \e[1mh264\e[0m..."
 
         regex=\\B\[JXH264\]\\B
         
         if [[ $file =~ $regex ]]
         then 
-          showInfo "$file already exists. Skipping converting using h264 codec."
+          showInfo "\e[1m$file\e[0m already exists. Skipping converting using h264 codec."
         else
           if [[ $gpu == "y" ]]
           then 
@@ -199,7 +199,7 @@ then
 
       if [ ! -f "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" ]
       then
-        showInfo "${filetyperemoved}-${codecName}.${outputfiletype} was not found after conversion!"
+        showInfo "\e[1m${filetyperemoved}-${codecName}.${outputfiletype}\e[0m was not found after conversion!"
       else
         newFileSize=$( wc -c "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" | awk '{print $1}' )
         showInfo "OLD FILE SIZE >>>> \e[1m${fileSize}\e[0m , NEW FILE SIZE >>>> \e[1m${newFileSize}\e[0m"
@@ -217,13 +217,16 @@ then
       fi
 
     else 
-      showInfo "Error: Battery power is $batteryPower%. EXiting script to save battery energy and protect it from overdraw."
+      showInfo "Error: Battery power is \e[1m$batteryPower%\e[0m. EXiting script to save battery energy and protect it from overdraw."
       exit 1
     fi
 
   done
-  
-  showInfo "Finished converting $count of $totalfiles video files in this folder."
+
+  if [ -d "${path}CONVERTED" ]; then rm -R "${path}CONVERTED"; fi
+
+  showInfo "Finished converting \e[1m$count\e[0m of \e[1m$totalfiles\e[0m video files in this folder."
+
 else
-  echo "No files with extension $inputfiletype found so no conversion took place."
+  echo "No files with extension \e[1m$inputfiletype\e[0m found so no conversion took place."
 fi
