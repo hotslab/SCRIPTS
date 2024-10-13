@@ -13,18 +13,18 @@ showHelp()
   echo
   echo -e "\e[1mConvert Videos\e[0m"
   echo
-  echo "Syntax: \e[1m bash videoConvert.sh [-i|o|c|r|p|g|l|q|help] \e[0m"
+  echo -e "Syntax: \e[1mbash videoConvert.sh [-i|o|c|r|p|g|l|q|help]\e[0m"
   echo
   echo "Options:"
   echo -e "\e[1m -i \e[0m     Video input type e.g mp4"
   echo -e "\e[1m -o \e[0m     Video output type e.g mp4"
   echo -e "\e[1m -c \e[0m     Conversion codec i.e. av1, hevc or h264"
-  echo -e '\e[1m -r \e[0m     Delete original  file after finishing  i.e. either "y" or "n" '
-  echo -e '\e[1m -p \e[0m     Path to where files reside in using the full path name e.g. /home/Videos - default is script location i.e. \e[1m $(pwd) \e[0m'
+  echo -e '\e[1m -r \e[0m     Delete original  file after finishing  i.e. either "y" or "n" - default "y"'
+  echo -e '\e[1m -p \e[0m     Path to where files reside in using the full path name e.g. /home/Videos - default is script location i.e. \e[1m$(pwd)\e[0m'
   echo -e '\e[1m -g \e[0m     Use gpu i.e. either "y" or "n" - default "y" '
-  echo -e '\e[1m -l \e[0m     Gpu path i.e. \e[1m /dev/dri/renderD128 \e[0m'
-  echo -e '\e[1m -q \e[0m     Video quality scale i.e. \e[1m crf or qb for vaapi \e[0m - defaults to those hardcoded for each encoder in this script'
-  echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen \e[0m"
+  echo -e '\e[1m -l \e[0m     Gpu path i.e. \e[1m/dev/dri/renderD128\e[0m'
+  echo -e '\e[1m -q \e[0m     Video quality scale i.e. \e[1mcrf or qb for vaapi\e[0m - defaults to those hardcoded for each encoder in this script'
+  echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen\e[0m"
   echo
   echo  "======================================================"
   echo
@@ -51,7 +51,8 @@ chargingStates=('fully-charged', 'charging')
 inputfiletype="mp4"
 outputfiletype="mp4"
 codec="hevc"
-removeFile="n"
+codecName="HEVC"
+removeFile="y"
 path="$(pwd)/"
 gpu="y"
 gpuLocation="/dev/dri/renderD128"
@@ -79,10 +80,14 @@ do
     esac
 done
 
-if [[ ! ${codecs[@]} =~ $output ]]
+if [[ ! ${codecs[@]} =~ $codec ]]
 then 
   showHelp "Error: The \e[1mCodec\e[0m value is incorrect i.e -c must be either "av1", "hevc" or "h264"! "
   exit 1
+else
+  if [[ $codec == 'hevc' ]]; then codecName="[JXHEVC]"; fi
+  if [[ $codec == 'av1' ]]; then codecName="[JXAV1]"; fi
+  if [[ $codec == 'h264' ]]; then codecName="[JXH264]"; fi
 fi
 
 echo
@@ -110,19 +115,22 @@ declare -i count=0
 
 if [[ $totalfiles -gt 0 ]]
 then
-  
-  if [ ! -d "$path/CON" ]; then mkdir -p "$path/CON"; fi
-  if [ ! -d "$path/DONE" ]; then mkdir -p "$path/DONE"; fi
+
+  if [ ! -d "${path}CONVERTED" ]; then mkdir -p "${path}CONVERTED"; fi
+  if [[ $removeFile == 'n' ]]
+  then
+    if [ ! -d "${path}ORIGINAL" ]; then mkdir -p "${path}ORIGINAL"; fi
+  fi
 
   for file in "$path"*.$inputfiletype
   do
-    
     
     chargingState=$(upower -i $(upower -e | grep '/battery') | grep --color=never -E state|xargs|cut -d' ' -f2)
     batteryPower=$(upower -i $(upower -e | grep '/battery') | grep --color=never -E percentage|xargs|cut -d' ' -f2|sed s/%//)
 
     if [[ ${chargingStates[@]} =~ $chargingState ]] || [[ $batteryPower -gt 50 ]]
     then
+  
 
       count+=1
       fileSize=$( wc -c "$file" | awk '{print $1}' )
@@ -135,47 +143,76 @@ then
       if [[ $codec == "av1" ]]
       then
         showInfo "Converting using av1..."
-        if [[ $gpu == "y" ]]
+
+        regex=\\B\[JXAV1\]\\B
+        
+        if [[ $file =~ $regex ]]
         then 
-          showInfo "No gpu functionality for av1 conversion added yet! Use software decoder."
-        else 
-          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          showInfo "$file already exists. Skipping converting using av1 codec."
+        else
+          if [[ $gpu == "y" ]]
+          then 
+            showInfo "No gpu functionality for av1 conversion added yet! Use software decoder."
+          else 
+            time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+          fi
         fi
 
       elif [[ $codec == "hevc" ]]
       then 
         
         showInfo "Converting using hevc..."
-        if [[ $gpu == "y" ]]
+
+        regex=\\B\[JXHEVC\]\\B
+        
+        if [[ $file =~ $regex ]]
         then 
-          time ffmpeg -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp ${videoQuality:-33} -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          showInfo "$file already exists. Skipping converting using hevc codec."
         else
-          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          if [[ $gpu == "y" ]]
+          then 
+            time ffmpeg -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp ${videoQuality:-33} -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+          else
+            time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+          fi
         fi
 
       else
         
         showInfo "Converting using h264..."
-        if [[ $gpu == "y" ]]
+
+        regex=\\B\[JXH264\]\\B
+        
+        if [[ $file =~ $regex ]]
         then 
-          showInfo "No gpu functionality for h264 conversion added yet! Use software decoder."
+          showInfo "$file already exists. Skipping converting using h264 codec."
         else
-          time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a copy "${path}CON/${filetyperemoved}.${outputfiletype}"
+          if [[ $gpu == "y" ]]
+          then 
+            showInfo "No gpu functionality for h264 conversion added yet! Use software decoder."
+          else
+            time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+          fi
         fi
 
       fi
 
-      if [ ! -f "${path}CON/${filetyperemoved}.${outputfiletype}" ]
+      if [ ! -f "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" ]
       then
-        showInfo "${filetyperemoved}.${outputfiletype} was not found after conversion!"
+        showInfo "${filetyperemoved}-${codecName}.${outputfiletype} was not found after conversion!"
       else
+        newFileSize=$( wc -c "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" | awk '{print $1}' )
+        showInfo "OLD FILE SIZE >>>> \e[1m${fileSize}\e[0m , NEW FILE SIZE >>>> \e[1m${newFileSize}\e[0m"
+        
+        mv  "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" "${path}${filetyperemoved}-${codecName}.${outputfiletype}"
+
         if [ $removeFile == "y" ]  
         then
           rm -R "$file"
-          showInfo "The video file No. $count of $totalfiles titled '$file' has been converted to the CON folder, and the original file deleted."
+          showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file deleted."
         else
-          mv "$file" "${path}DONE/${urlremoved}"
-          showInfo "The video file No. $count of $totalfiles titled '$file' has been converted to the CON folder, and the original file moved to the DONE folder."
+          mv "$file" "${path}ORIGINAL/${urlremoved}"
+          showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file moved to \e[1m${path}ORIGINAL/${urlremoved}\e[0m."
         fi
       fi
 
