@@ -201,7 +201,7 @@ then
 
       fi
 
-      if [[ $convertedFileAlreadyExists == "n"]]
+      if [[ $convertedFileAlreadyExists == "n" ]]
       then
         if [ ! -f "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" ]
         then
@@ -221,7 +221,7 @@ then
             showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file moved to \e[1m${path}ORIGINAL/${urlremoved}\e[0m."
           fi
         fi
-        
+
       fi
 
     else 
