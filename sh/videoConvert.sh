@@ -144,7 +144,7 @@ then
       then
         showInfo "Converting using \e[1mav1\e[0m..."
 
-        regex=\\B\[JXAV1\]\\B
+        regex=$(echo "\B\[JXAV1\]\B")
         
         if [[ $file =~ $regex ]]
         then 
@@ -163,7 +163,7 @@ then
         
         showInfo "Converting using \e[1mhevc\e[0m..."
 
-        regex=\\B\[JXHEVC\]\\B
+        regex=$(echo "\B\[JXHEVC\]\B")
         
         if [[ $file =~ $regex ]]
         then 
@@ -181,7 +181,7 @@ then
         
         showInfo "Converting using \e[1mh264\e[0m..."
 
-        regex=\\B\[JXH264\]\\B
+        regex=$(echo "\B\[JXH264\]\B")
         
         if [[ $file =~ $regex ]]
         then 
