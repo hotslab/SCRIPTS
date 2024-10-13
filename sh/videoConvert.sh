@@ -139,6 +139,7 @@ then
 
       urlremoved="${file##*/}"
       filetyperemoved="${urlremoved%.*}"
+      convertedFileAlreadyExists="n"
       
       if [[ $codec == "av1" ]]
       then
@@ -148,6 +149,7 @@ then
         
         if [[ $file =~ $regex ]]
         then 
+          convertedFileAlreadyExists="y"
           showInfo "\e[1m$file\e[0m already exists. Skipping converting using av1 codec."
         else
           if [[ $gpu == "y" ]]
@@ -167,6 +169,7 @@ then
         
         if [[ $file =~ $regex ]]
         then 
+          convertedFileAlreadyExists="y"
           showInfo "\e[1m$file\e[0m already exists. Skipping converting using hevc codec."
         else
           if [[ $gpu == "y" ]]
@@ -185,6 +188,7 @@ then
         
         if [[ $file =~ $regex ]]
         then 
+          convertedFileAlreadyExists="y"
           showInfo "\e[1m$file\e[0m already exists. Skipping converting using h264 codec."
         else
           if [[ $gpu == "y" ]]
@@ -197,23 +201,27 @@ then
 
       fi
 
-      if [ ! -f "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" ]
+      if [[ $convertedFileAlreadyExists == "n"]]
       then
-        showInfo "\e[1m${filetyperemoved}-${codecName}.${outputfiletype}\e[0m was not found after conversion!"
-      else
-        newFileSize=$( wc -c "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" | awk '{print $1}' )
-        showInfo "OLD FILE SIZE >>>> \e[1m${fileSize}\e[0m , NEW FILE SIZE >>>> \e[1m${newFileSize}\e[0m"
-        
-        mv  "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" "${path}${filetyperemoved}-${codecName}.${outputfiletype}"
-
-        if [ $removeFile == "y" ]  
+        if [ ! -f "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" ]
         then
-          rm -R "$file"
-          showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file deleted."
+          showInfo "\e[1m${filetyperemoved}-${codecName}.${outputfiletype}\e[0m was not found after conversion!"
         else
-          mv "$file" "${path}ORIGINAL/${urlremoved}"
-          showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file moved to \e[1m${path}ORIGINAL/${urlremoved}\e[0m."
+          newFileSize=$( wc -c "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" | awk '{print $1}' )
+          showInfo "OLD FILE SIZE >>>> \e[1m${fileSize}\e[0m , NEW FILE SIZE >>>> \e[1m${newFileSize}\e[0m"
+          
+          mv  "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" "${path}${filetyperemoved}-${codecName}.${outputfiletype}"
+
+          if [ $removeFile == "y" ]  
+          then
+            rm -R "$file"
+            showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file deleted."
+          else
+            mv "$file" "${path}ORIGINAL/${urlremoved}"
+            showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file moved to \e[1m${path}ORIGINAL/${urlremoved}\e[0m."
+          fi
         fi
+        
       fi
 
     else 
