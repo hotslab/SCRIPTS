@@ -236,5 +236,5 @@ then
   showInfo "Finished converting \e[1m$count\e[0m of \e[1m$totalfiles\e[0m video files in this folder."
 
 else
-  echo "No files with extension \e[1m$inputfiletype\e[0m found so no conversion took place."
+  showInfo "No files with extension \e[1m$inputfiletype\e[0m found so no conversion took place."
 fi
