@@ -17,6 +17,9 @@ convertFolders () {
         bash videoConvert.sh -p "${1}"
         bash videoConvert.sh -p "${1}" -i mkv
         bash videoConvert.sh -p "${1}" -i webm
+        bash videoConvert.sh -p "${1}" -i wmv
+        bash videoConvert.sh -p "${1}" -i mov
+        bash videoConvert.sh -p "${1}" -i ts
     else 
         showInfo "Folder ${1} does not exist"
     fi
