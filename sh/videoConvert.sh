@@ -124,15 +124,19 @@ then
 
   for file in "$path"*.$inputfiletype
   do
+
+    count+=1
     
     chargingState=$(upower -i $(upower -e | grep '/battery') | grep --color=never -E state|xargs|cut -d' ' -f2)
     batteryPower=$(upower -i $(upower -e | grep '/battery') | grep --color=never -E percentage|xargs|cut -d' ' -f2|sed s/%//)
 
     if [[ ${chargingStates[@]} =~ $chargingState ]] || [[ $batteryPower -gt 50 ]]
     then
-  
 
-      count+=1
+      originalCode=$( ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$file" )
+      if [[ $originalCode = 'hevc'  ]] || [[ $originalCode = 'av1' ]]; then showInfo "Video already in hevc and av1 formats. Skipping converting $file"; continue; fi
+
+      
       fileSize=$( wc -c "$file" | awk '{print $1}' )
       
       showInfo "Started converting video file No. $count of $totalfiles titled \e[1m$file\e[0m, with file size \e[1m$fileSize\e[0m bytes."
@@ -156,7 +160,7 @@ then
           then 
             showInfo "No gpu functionality for av1 conversion added yet! Use software decoder."
           else 
-            time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
           fi
         fi
 
@@ -174,9 +178,9 @@ then
         else
           if [[ $gpu == "y" ]]
           then 
-            time ffmpeg -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp ${videoQuality:-33} -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+            time ffmpeg -hide_banner -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp ${videoQuality:-33} -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
           else
-            time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
           fi
         fi
 
@@ -195,7 +199,7 @@ then
           then 
             showInfo "No gpu functionality for h264 conversion added yet! Use software decoder."
           else
-            time ffmpeg -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
           fi
         fi
 
