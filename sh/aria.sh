@@ -17,4 +17,6 @@ cleanUp() {
 
 trap cleanUp INT SIGINT SIGTERM
 
-aria2c --enable-rpc
+if [ ! -f "ariadownloads.txt" ]; then touch "ariadownloads.txt"; fi
+
+aria2c --input-file="ariadownloads.txt" --save-session="ariadownloads.txt" --save-session-interval=600 --enable-rpc 
