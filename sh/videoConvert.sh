@@ -242,6 +242,3 @@ then
 else
   showInfo "No files with extension \e[1m$inputfiletype\e[0m found so no conversion took place."
 fi
-
-
-# ffmpeg -y -loglevel debug -init_hw_device vaapi=foo:/dev/dri/renderD128 -hwaccel vaapi -hwaccel_output_format vaapi -i "My stepsister's first gopher ends with a hard fuck..mp4" -filter_hw_device foo -vf 'hwdownload=extra_hw_frames=64,format=nv12|vaapi,hwupload=extra_hw_frames=64,scale_vaapi=w=1920:h=1080' -c:v hevc_vaapi -bf 3 -b:v 3.75M -maxrate:v 3.75M -bufsize:v 0.5M -r:v 30 -c:a copy -f mp4 trolled.mp4
