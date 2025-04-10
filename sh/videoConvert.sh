@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -e
+# exit after error
+# set -e
 
 showHelp()
 {
@@ -36,6 +37,30 @@ showInfo() {
   echo -e ${1}
   echo "======================================================="
   echo
+}
+
+moveOrDeleteFiles() {
+  if [[ $convertedFileAlreadyExists == "n" ]]
+  then
+    if [ ! -f "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" ]
+    then
+      showInfo "\e[1m${filetyperemoved}-${codecName}.${outputfiletype}\e[0m was not found after conversion!"
+    else
+      newFileSize=$( wc -c "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" | awk '{print $1}' )
+      showInfo "OLD FILE SIZE >>>> \e[1m${fileSize}\e[0m , NEW FILE SIZE >>>> \e[1m${newFileSize}\e[0m"
+      
+      mv  "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" "${path}${filetyperemoved}-${codecName}.${outputfiletype}"
+
+      if [ $removeFile == "y" ]  
+      then
+        rm -R "$file"
+        showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file deleted."
+      else
+        mv "$file" "${path}ORIGINAL/${urlremoved}"
+        showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file moved to \e[1m${path}ORIGINAL/${urlremoved}\e[0m."
+      fi
+    fi
+  fi
 }
 
 cleanUp() {
@@ -160,7 +185,7 @@ then
           then 
             showInfo "No gpu functionality for av1 conversion added yet! Use software decoder."
           else 
-            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" && moveOrDeleteFiles || continue
           fi
         fi
 
@@ -178,9 +203,9 @@ then
         else
           if [[ $gpu == "y" ]]
           then 
-            time ffmpeg -hide_banner -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp ${videoQuality:-30} -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+            time ffmpeg -hide_banner -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:v hevc_vaapi -qp ${videoQuality:-30} -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" && moveOrDeleteFiles || continue
           else
-            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" && moveOrDeleteFiles || continue
           fi
         fi
 
@@ -199,34 +224,12 @@ then
           then 
             showInfo "No gpu functionality for h264 conversion added yet! Use software decoder."
           else
-            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}"
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a copy "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" && moveOrDeleteFiles || continue
           fi
         fi
 
       fi
 
-      if [[ $convertedFileAlreadyExists == "n" ]]
-      then
-        if [ ! -f "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" ]
-        then
-          showInfo "\e[1m${filetyperemoved}-${codecName}.${outputfiletype}\e[0m was not found after conversion!"
-        else
-          newFileSize=$( wc -c "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" | awk '{print $1}' )
-          showInfo "OLD FILE SIZE >>>> \e[1m${fileSize}\e[0m , NEW FILE SIZE >>>> \e[1m${newFileSize}\e[0m"
-          
-          mv  "${path}CONVERTED/${filetyperemoved}-${codecName}.${outputfiletype}" "${path}${filetyperemoved}-${codecName}.${outputfiletype}"
-
-          if [ $removeFile == "y" ]  
-          then
-            rm -R "$file"
-            showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file deleted."
-          else
-            mv "$file" "${path}ORIGINAL/${urlremoved}"
-            showInfo "The video file No. $count of $totalfiles has been converted to \e[1m${path}${filetyperemoved}-${codecName}.${outputfiletype}\e[0m, and the original file moved to \e[1m${path}ORIGINAL/${urlremoved}\e[0m."
-          fi
-        fi
-
-      fi
 
     else 
       showInfo "Error: Battery power is \e[1m$batteryPower%\e[0m. EXiting script to save battery energy and protect it from overdraw."
