@@ -15,4 +15,8 @@ echo " " && \
     echo " " && \
     echo "Upgrading flatpack packages..." && \
     echo " " && \
-    flatpak update -y
+    flatpak update -y && \
+    echo " " && \
+    echo "Removing unused flatpak packages..." && \
+    echo " " && \
+    flatpak uninstall --unused -y
