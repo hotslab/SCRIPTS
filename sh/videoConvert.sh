@@ -183,9 +183,9 @@ then
         if [[ $gpu == "y" ]]
         then 
           time ffmpeg -hide_banner -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v hevc_vaapi -qp ${videoQuality:-30} -pix_fmt yuv420p -profile:v main -preset slower -compression_level 1 -c:a copy "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && moveOrDeleteFiles \
-          || \ 
+          || \
           time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" -y && moveOrDeleteFiles || continue
-        else
+        else 
           time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && moveOrDeleteFiles || continue
         fi
 
