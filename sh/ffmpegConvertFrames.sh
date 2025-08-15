@@ -18,7 +18,7 @@ showHelp()
 showInfo() {
   echo
   echo "======================================================="
-  echo -e ${1}
+  echo -e "${1}"
   echo "======================================================="
   echo
 }
@@ -90,7 +90,7 @@ if [[ $totalfiles -gt 0 ]]; then
     showInfo "Video's original fps data is ${originalFPSArray[0]}/${originalFPSArray[1]}"
     
     originalFPS=$(bc -l <<< "(${originalFPSArray[0]} / ${originalFPSArray[1]})")
-    originalFPS=$(roundNumber ${originalFPS} 0)
+    originalFPS=$(roundNumber "${originalFPS}" 0)
 
     showInfo "Calculated video framerate is $originalFPS"
 
@@ -98,8 +98,8 @@ if [[ $totalfiles -gt 0 ]]; then
     urlremoved="${i##*/}"
     filetyperemoved="${urlremoved%.*}"
 
-    if [ $originalFPS -ge $fpsLimit ] ; then
-      if  [ $originalFPS -ne $newFPS ] ; then
+    if [ "$originalFPS" -ge "$fpsLimit" ] ; then
+      if  [ "$originalFPS" -ne "$newFPS" ] ; then
         showInfo "Converting video with new fps of $newFPS..."
         ffmpeg -y -i "$i" -filter:v fps=fps="${newFPS}" -c:v libx265 -c:a aac -ab 128k -ar 44100 "${directory}FPSCON/${filetyperemoved}.${inputfiletype}" < /dev/null
         mv "$i" "${directory}FPSDONE/${urlremoved}"

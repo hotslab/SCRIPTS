@@ -126,8 +126,8 @@ if [[ $totalfiles -gt 0 ]]; then
     filetyperemoved="${urlremoved%.*}"
 
     if [[ "${urlremoved}" != *-converted.${inputfiletype} ]]; then
-      if  [ $height -gt $scale ] || [ $width -gt $scale ]; then
-        if [ $width -gt $height ]; then
+      if  [ "$height" -gt "$scale" ] || [ "$width" -gt "$scale" ]; then
+        if [ "$width" -gt "$height" ]; then
           showInfo "Changing dimensions by width..."
           truncated=$(bc -l <<< "($height / $width) * $scale")
           truncated=$(( ((${truncated%.*}+5)/10)*10 ))
