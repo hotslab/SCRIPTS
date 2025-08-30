@@ -10,7 +10,7 @@ showHelp()
    echo -e "-d     Directory the files are in using the full path name e.g. /home/Videos - default is script location i.e. \e[1m $(pwd) \e[0m"
    echo -e "-i     Input file type e.g .mp4 - default is \e[1m mp4 \e[0m"
    echo -e "-o     Output file type e.g .mp4 - default is \e[1m mp4 \e[0m"
-   echo -e "-v     Video codec .e.g libx265 - default is \e[1m libx256 \e[0m"
+   echo -e "-v     Video codec .e.g libx265 - default is \e[1m libx265 \e[0m"
    echo -e "-a     Audio codec .e.g aac - default is \e[1m aac -ab 128k -ar 44100 \e[0m"
    echo -e "-s     Maximum scale dimension for video .e.g 1080 or 720 - default is \e[1m 1080 \e[0m"
    echo -e "-r     Remove folders when done i.e. \e[1m yes \e[0m or \e[1m no \e[0m - default is \e[1m no \e[0m"
