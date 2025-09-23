@@ -70,8 +70,8 @@ cleanUp() {
 trap cleanUp INT SIGINT SIGTERM
 
 # Default parameters
-codecs=("av1", "hevc", "h264")
-chargingStates=('fully-charged', 'charging')
+codecs=("av1" "hevc" "h264")
+chargingStates=('fully-charged' 'charging')
 inputfiletype="mp4"
 outputfiletype="mp4"
 codec="hevc"
