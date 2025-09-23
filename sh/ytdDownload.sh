@@ -179,8 +179,15 @@ else showInfo "The \e[1m$mode\e[0m extension \e[1m$fileExtension\e[0m was not pa
 fi
 
 if [[ $pageTitleName == "yes" ]] 
-then 
-  titleFound=$(wget --quiet -O - "$url" | paste -s -d ' '  | sed -n -e 's!.*<head[^>]*>\(.*\)</head>.*!\1!p' | sed -n -e 's!.*<title>\(.*\)</title>.*!\1!p' | sed -e 's/\///g' -e 's/|//g' -e 's/\s*,\s*/,/g' -e 's/^\s*//' -e 's/\s*$//')
+then
+  titleFound=$(wget --quiet -O - "$url" \
+  | paste -s -d ' '  \
+  | sed -n -e 's!.*<head[^>]*>\(.*\)</head>.*!\1!p' \
+  | sed -n -e 's!.*<title>\(.*\)</title>.*!\1!p' \
+  | sed -e 's/\///g' -e 's/|//g' \
+  | sed -e's/\(.\{240\}\).*/\1/' \
+  | sed -e 's/\s*,\s*/,/g' -e 's/^\s*//' -e 's/\s*$//'
+  )
   if [[ $titleFound == "" ]]
   then showInfo "The page title was not found so using the default name of \e[1m$fileTitle\e[0m."
   else showInfo "Using the new name of \e[1m$titleFound\e[0m found on page title instead of \e[1m$fileTitle\e[0m."; fileTitle=$titleFound; 
