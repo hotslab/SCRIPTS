@@ -13,18 +13,19 @@ showHelp()
   echo
   echo -e "\e[1mDownload Video Help\e[0m"
   echo
-  echo "Syntax: \e[1m bash ytDownload.sh [-u|v|f|a|s|help] \e[0m"
+  echo -e "Syntax: \e[1m bash ytDownload.sh [-u|v|f|a|s|help] \e[0m"
   echo
   echo "Options:"
-  echo -e "\e[1m -u \e[0m     Video url"
-  echo -e "\e[1m -o \e[0m     Output video or audio format e.g mp3 or mp4"
-  echo -e "\e[1m -f \e[0m     Video format extension e.g. -f 22 for 720p youtube video"
-  echo -e '\e[1m -m \e[0m     File type dowmload mode i.e. either "video" or "audio" '
-  echo -e '\e[1m -a \e[0m     Use aria2c to download i.e. pass "yes" to activate or "no" to deactivate '
-  echo -e '\e[1m -t \e[0m     Time duration to cut from video e.g. "*34:38-49:37" where format is "*HH:mm:ss-HH:mm:ss" '
-  echo -e '\e[1m -n \e[0m     Custom file name i.e. \e[1m "My Video" \e[0m'
-  echo -e '\e[1m -b \e[0m     Select browser to use cookies from i.e. \e[1m "brave" \e[0m'
-  echo -e '\e[1m -e \e[0m     Get extensions to select from i.e. pass "yes" to fetch or "no" to progress normaly'
+  echo -e "\e[1m -u \e[0m     The \e[1mvideo url\e[0m to dowload from"
+  echo -e "\e[1m -o \e[0m     The \e[1moutput format\e[0m for the video or audio e.g mp3 or mp4"
+  echo -e "\e[1m -f \e[0m     The \e[1mvideo download format\e[0m extension e.g. -f 22 for 720p youtube video"
+  echo -e '\e[1m -m \e[0m     The \e[1mfile type\e[0m download mode i.e. either "video" or "audio" '
+  echo -e '\e[1m -a \e[0m     Use \e[1maria2c\e[0m to download i.e. pass "yes" to activate or "no" to deactivate '
+  echo -e '\e[1m -t \e[0m     The \e[1mtime duration\e[0m to cut from video e.g. "*34:38-49:37" where format is "*HH:mm:ss-HH:mm:ss" '
+  echo -e '\e[1m -n \e[0m     Use a \e[1mcustom file name\e[0m i.e. \e[1m "My Video" \e[0m'
+  echo -e '\e[1m -b \e[0m     Select \e[1mbrowser\e[0m to use cookies from i.e. \e[1m "brave" \e[0m'
+  echo -e '\e[1m -e \e[0m     Get \e[1mfile download extensions\e[0m to select from i.e. pass "yes" to fetch or "no" to progress normaly'
+  echo -e '\e[1m -p \e[0m     Use the \e[1mpage title\e[0m from webpage to name the downloaded file i.e. "yes" or "no"'
   echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen \e[0m"
   echo
   echo  "======================================================"
@@ -34,7 +35,7 @@ showHelp()
 showInfo() {
   echo
   echo "======================================================="
-  echo -e ${1}
+  echo -e "${1}"
   echo "======================================================="
   echo
 }
@@ -68,8 +69,9 @@ timeOption=""
 customName=""
 browser="none"
 getExtensions="no"
+pageTitleName="no"
 
-while getopts u:e:o:f:m:a:t:n:b:h: option
+while getopts u:e:o:f:m:a:t:n:b:p:h: option
 do
   case "${option}" in
   u)  url=${OPTARG} ;;
@@ -79,17 +81,22 @@ do
   m)
     if [[ ${OPTARG} == "video" ]] ||  [[ ${OPTARG} == "audio" ]]
     then mode=${OPTARG};
-    else showHelp "Error: The \e[1mMode\e[0m value is incorrect i.e -m must be either "video" or "audio"! "; exit 1; 
+    else showHelp "Error: The \e[1mMode\e[0m value is incorrect i.e -m must be either \e[1mvideo\e[0m or \e[1maudio\e[0m! "; exit 1; 
     fi ;;
   a) 
     if [[ ${OPTARG} == "yes" ]] || [[ ${OPTARG} == "no" ]]
     then useAria2cDownloader=${OPTARG};
-    else showHelp "Error: The \e[1mAria2c Downloader\e[0m activation value is incorrect i.e -a must be either "yes" or "no"! "; exit 1; 
+    else showHelp "Error: The \e[1mAria2c Downloader\e[0m activation value is incorrect i.e -a must be either \e[1myes\e[0m or \e[1mno\e[0m! "; exit 1; 
     fi ;;
-  t)  timeOption="--download-sections "${OPTARG}"" ;;
+  t)  timeOption="--download-sections \e[1m${OPTARG}\e[0m" ;;
   n)  customName=${OPTARG} ;;
   b)  
-    if [[ ${OPTARG} != "none" ]] then browser=${OPTARG}; fi ;;
+    if [[ ${OPTARG} != "none" ]]; then browser=${OPTARG}; fi ;;
+  p)  
+    if [[ ${OPTARG} == "yes" ]] || [[ ${OPTARG} == "no" ]]
+    then pageTitleName=${OPTARG};
+    else showHelp "Error: The \e[1mPage Title\e[0m option value is incorrect i.e -a must be either \e[1myes\e[0m or \e[1mno\e[0m! "; exit 1; 
+    fi ;;
   h) 
     if ! [[ ${OPTARG} == "elp" ]] ; then showHelp "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit 1; else showHelp; exit 1; fi;;
   *) 	showHelp "Error: Invalid option selected!"; exit 1;;
@@ -166,6 +173,15 @@ fileExtension=${fileName#*^}
 if [[ ${videoExtensions[@]} =~ $fileExtension ]] || [[ ${audioExtensions[@]} =~ $fileExtension ]]
 then showInfo "Parsed files name is \e[1m$fileTitle.$fileExtension\e[0m"
 else showInfo "The \e[1m$mode\e[0m extension \e[1m$fileExtension\e[0m was not parsed succesfully."; exit 1;
+fi
+
+if [[ $pageTitleName == "yes" ]] 
+then 
+    titleFound=$(wget -qO- "$url" | grep -iPo '(?<=<title>)(.*)(?=</title>)')
+    if [[ $titleFound == "" ]]
+    then showInfo "The page title was not found so using the default name of \e[1m$fileTitle\e[0m."
+    else showInfo "Using the new name of \e[1m$titleFound\e[0m found on page title instead of \e[1m$fileTitle\e[0m."; fileTitle=$titleFound; 
+    fi
 fi
 
 showInfo "Downloading file \e[1m$fileTitle.$fileExtension\e[0m and converting it to be \e[1m$fileTitle.$output\e[0m..."
