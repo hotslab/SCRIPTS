@@ -198,24 +198,29 @@ showInfo "Downloading file \e[1m$fileTitle.$fileExtension\e[0m and converting it
 
 if [[ $mode == "video" ]]
 then
+  showInfo "Downloading in video mode...."
   if [[ $useAria2cDownloader == "yes" ]]
   then 
     if [[ $browser == "none" ]]
     then 
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o $fileTitle-FILE.%(ext)s --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f $video $url"
       # shellcheck disable=SC2086
-      time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url";
+      time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
     else 
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -i4 $timeOption --cookies-from-browser $browser --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o $fileTitle-FILE.%(ext)s --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f $video $url"
       # shellcheck disable=SC2086
-      time yt-dlp -i4 $timeOption --cookies-from-browser "$browser" --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url";
+      time yt-dlp -i4 $timeOption --cookies-from-browser "$browser" --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
     fi
   else 
     if [[ $browser == "none" ]]
     then 
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o $fileTitle-FILE.%(ext)s -f $video $url"
       # shellcheck disable=SC2086
-      time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url";
+      time yt-dlp -i4 $timeOption --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
     else 
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -i4 $timeOption --cookies-from-browser $browser --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o $fileTitle-FILE.%(ext)s -f $video $url"
       # shellcheck disable=SC2086
-      time yt-dlp -i4 $timeOption --cookies-from-browser "$browser" --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url";
+      time yt-dlp -i4 $timeOption --cookies-from-browser "$browser" --write-subs --sub-lang en --write-auto-sub --convert-subtitles srt --embed-metadata --abort-on-unavailable-fragment --fragment-retries 999 -o "$fileTitle-FILE.%(ext)s" -f "$video" "$url"
     fi
   fi
   if [[ $timeOption == "" ]]
@@ -224,10 +229,12 @@ then
     if [[ -f "$fileTitle-FILE.en.srt" ]]
     then 
       showInfo "The subtitle file found is \e[1m $fileTitle-FILE.en.srt \e[0m"
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time ffmpeg  -i $fileTitle-FILE.$fileExtension -i $fileTitle-FILE.en.srt -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy $fileTitle.$output"
       time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -i "$fileTitle-FILE.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$output"
       rm "$fileTitle-FILE.en.srt"
     else
       showInfo "No subtitle found..."
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time ffmpeg  -i $fileTitle-FILE.$fileExtension -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy $fileTitle.$output"
       time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$output"
     fi
     rm "$fileTitle-FILE.$fileExtension"
@@ -240,16 +247,25 @@ then
   fi
 elif [[ $mode == "audio" ]]
 then
+  showInfo "Downloading in audio mode...."
   if [[ $useAria2cDownloader == "yes" ]]
   then  
     if [[ $browser == "none" ]]
-    then time yt-dlp -4 "$timeOption" --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
-    else time yt-dlp -4 "$timeOption" --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+    then 
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format $output -o $fileTitle.$output --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f $video $url"
+      time yt-dlp -4 "$timeOption" --audio-quality 0 --extract-audio --audio-format "$output" -o "${fileTitle}.${output}" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+    else 
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --cookies-from-browser $browser --audio-quality 0 --extract-audio --audio-format $output -o $fileTitle.$output --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f $video $url"
+      time yt-dlp -4 "$timeOption" --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "${fileTitle}.${output}" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
     fi
   else  
     if [[ $browser == "none" ]]
-    then time yt-dlp -4 "$timeOption" --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
-    else time yt-dlp -4 "$timeOption" --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
+    then 
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format $output -o ${fileTitle}.${output} --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f $video $url"
+      time yt-dlp -4 "$timeOption" --audio-quality 0 --extract-audio --audio-format "$output" -o "${fileTitle}.${output}" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
+    else 
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --cookies-from-browser $browser --audio-quality 0 --extract-audio --audio-format $output -o $fileTitle.$output --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f $video $url"
+      time yt-dlp -4 "$timeOption" --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "${fileTitle}.${output}" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
     fi
   fi
 fi
