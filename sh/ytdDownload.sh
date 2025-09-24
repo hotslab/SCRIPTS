@@ -253,19 +253,23 @@ then
     if [[ $browser == "none" ]]
     then 
       showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format $output -o $fileTitle.$output --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f $video $url"
-      time yt-dlp -4 "$timeOption" --audio-quality 0 --extract-audio --audio-format "$output" -o "${fileTitle}.${output}" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+      # shellcheck disable=SC2086
+      time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
     else 
       showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --cookies-from-browser $browser --audio-quality 0 --extract-audio --audio-format $output -o $fileTitle.$output --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f $video $url"
-      time yt-dlp -4 "$timeOption" --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "${fileTitle}.${output}" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
+      # shellcheck disable=SC2086
+      time yt-dlp -4 $timeOption --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail --external-downloader aria2c --downloader-args aria2c:"-x 8 -k 2M" -f "$video" "$url"
     fi
   else  
     if [[ $browser == "none" ]]
     then 
-      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format $output -o ${fileTitle}.${output} --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f $video $url"
-      time yt-dlp -4 "$timeOption" --audio-quality 0 --extract-audio --audio-format "$output" -o "${fileTitle}.${output}" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
+      showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format $output -o $fileTitle.$output --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f $video $url"
+      # shellcheck disable=SC2086
+      time yt-dlp -4 $timeOption --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
     else 
       showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time yt-dlp -4 $timeOption --cookies-from-browser $browser --audio-quality 0 --extract-audio --audio-format $output -o $fileTitle.$output --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f $video $url"
-      time yt-dlp -4 "$timeOption" --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "${fileTitle}.${output}" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
+      # shellcheck disable=SC2086
+      time yt-dlp -4 $timeOption --cookies-from-browser "$browser" --audio-quality 0 --extract-audio --audio-format "$output" -o "$fileTitle.$output" --embed-metadata --convert-thumbnails jpg --embed-thumbnail -f "$video" "$url"
     fi
   fi
 fi
