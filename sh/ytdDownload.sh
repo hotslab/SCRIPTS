@@ -178,19 +178,30 @@ then showInfo "Parsed files name is \e[1m$fileTitle.$fileExtension\e[0m"
 else showInfo "The \e[1m$mode\e[0m extension \e[1m$fileExtension\e[0m was not parsed succesfully."; exit 1;
 fi
 
+pageTitleUsed=""
+shortenedTitle=""
+
 if [[ $pageTitleName == "yes" ]] 
 then
-  titleFound=$(wget --quiet -O - "$url" \
+  pageTitleUsed=$(wget --quiet -O - "$url" \
   | paste -s -d ' '  \
   | sed -n -e 's!.*<head[^>]*>\(.*\)</head>.*!\1!p' \
   | sed -n -e 's!.*<title>\(.*\)</title>.*!\1!p' \
   | sed -e 's/\///g' -e 's/|//g' \
-  | sed -e's/\(.\{240\}\).*/\1/' \
   | sed -e 's/\s*,\s*/,/g' -e 's/^\s*//' -e 's/\s*$//'
   )
-  if [[ $titleFound == "" ]]
-  then showInfo "The page title was not found so using the default name of \e[1m$fileTitle\e[0m."
-  else showInfo "Using the new name of \e[1m$titleFound\e[0m found on page title instead of \e[1m$fileTitle\e[0m."; fileTitle=$titleFound; 
+  if [[ $pageTitleUsed == "" ]]
+  then 
+    showInfo "The page title was not found so using the default name of \e[1m$fileTitle\e[0m."
+    pageTitleUsed="$fileTitle"
+  else 
+    shortenedTitle=$(
+      echo "$pageTitleUsed" \
+      | sed -e's/\(.\{240\}\).*/\1/' \
+      | sed -e 's/\s*,\s*/,/g' -e 's/^\s*//' -e 's/\s*$//'
+    )
+    showInfo "Using the new name of \e[1m$shortenedTitle\e[0m found on page title instead of \e[1m$fileTitle\e[0m." 
+    fileTitle="$shortenedTitle"
   fi
 fi
 
@@ -230,12 +241,12 @@ then
     then 
       showInfo "The subtitle file found is \e[1m $fileTitle-FILE.en.srt \e[0m"
       showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time ffmpeg  -i $fileTitle-FILE.$fileExtension -i $fileTitle-FILE.en.srt -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy $fileTitle.$output"
-      time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -i "$fileTitle-FILE.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$output"
+      time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -i "$fileTitle-FILE.en.srt" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -metadata title="$pageTitleUsed"  -vcodec copy -acodec copy "$fileTitle.$output"
       rm "$fileTitle-FILE.en.srt"
     else
       showInfo "No subtitle found..."
       showInfo "\e[1mDOWNLOAD COMMAND =>\e[0m time ffmpeg  -i $fileTitle-FILE.$fileExtension -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy $fileTitle.$output"
-      time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -movflags use_metadata_tags -map_metadata 0 -vcodec copy -acodec copy "$fileTitle.$output"
+      time ffmpeg  -i "$fileTitle-FILE.$fileExtension" -movflags use_metadata_tags -map_metadata 0 -metadata title="$pageTitleUsed" -vcodec copy -acodec copy "$fileTitle.$output"
     fi
     rm "$fileTitle-FILE.$fileExtension"
   else
