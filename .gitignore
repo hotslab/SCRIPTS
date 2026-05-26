@@ -1,1 +1,6 @@
+.env
 cpp/*.out
+sh/*.txt
+sh/.env*
+# ignore directories in sh
+sh/*/ 

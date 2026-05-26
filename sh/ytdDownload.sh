@@ -71,6 +71,8 @@ browser="none"
 getExtensions="no"
 pageTitleName="no"
 
+## WIP: --downloader ffmpeg --hls-use-mpegts FOR hls streams e.g. m3u8 and ts files
+
 while getopts u:e:o:f:m:a:t:n:b:p:h: option
 do
   case "${option}" in

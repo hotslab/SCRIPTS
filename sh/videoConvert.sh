@@ -22,9 +22,10 @@ showHelp()
   echo -e "\e[1m -c \e[0m     Conversion codec i.e. \e[1mav1, hevc or h264\e[0m"
   echo -e "\e[1m -r \e[0m     Delete original  file after finishing  i.e. either \e[1my\e[0m or \e[1mn\e[0m - default \e[1my\e[0m"
   echo -e "\e[1m -p \e[0m     Path to where files reside in using the full path name e.g. \e[1m/home/Videos\e[0m - default is script location i.e. \e[1m$(pwd)\e[0m"
-  echo -e "\e[1m -g \e[0m     Use gpu i.e. either \e[1my\e[0m or \e[1mn\e[0m - default \e[1my\e[0m "
+  echo -e "\e[1m -g \e[0m     Use gpu i.e. either \e[1myes\e[0m or \e[1mno\e[0m - default \e[1myes\e[0m "
   echo -e "\e[1m -l \e[0m     Gpu path i.e. \e[1m/dev/dri/renderD128\e[0m"
   echo -e "\e[1m -q \e[0m     Video quality scale i.e. \e[1mcrf\e[0m or \e[1mqb\e[0m for \e[1mvaapi\e[0m - defaults to those hardcoded for each encoder in this script"
+  echo -e "\e[1m -f \e[0m     Ignore original format i.e. either \e[1myes\e[0m or \e[1mno\e[0m - default \e[1myes\e[0m "
   echo -e "\e[1m -help \e[0m  Print this \e[1mhelp screen\e[0m"
   echo
   echo  "======================================================"
@@ -40,7 +41,7 @@ showInfo() {
 }
 
 moveOrDeleteFiles() {
-  if [[ $convertedFileAlreadyExists == "n" ]]
+  if [[ $convertedFileAlreadyExists == "no" ]]
   then
     if [ ! -f "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" ]
     then
@@ -48,7 +49,7 @@ moveOrDeleteFiles() {
     else
       newFileSize=$( wc -c "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" | awk '{print $1}' )
       showInfo "OLD FILE SIZE >>>> \e[1m${fileSize}\e[0m , NEW FILE SIZE >>>> \e[1m${newFileSize}\e[0m"
-      if [ "$removeFile" == "y" ]  
+      if [ "$removeFile" == "yes" ]  
       then
         rm -R "$file"
         mv  "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" "${path}${filetyperemoved}.${outputfiletype}"
@@ -75,13 +76,14 @@ chargingStates=('fully-charged' 'charging')
 inputfiletype="mp4"
 outputfiletype="mp4"
 codec="hevc"
-removeFile="y"
+removeFile="yes"
 path="$(pwd)/"
-gpu="y"
+gpu="yes"
 gpuLocation="/dev/dri/renderD128"
 videoQuality=""
+ignoreOriginalFormat="no"
 
-while getopts i:o:c:r:p:g:l:q:h: option
+while getopts i:o:c:r:p:g:l:q:f:h: option
 do
 	case "${option}" in
         i) inputfiletype=${OPTARG};;
@@ -89,7 +91,7 @@ do
         c)
           if [ "${OPTARG}" != "" ]; then codec=${OPTARG}; fi ;;
         r) 
-          if [ "${OPTARG}" = "y" ] || [ "${OPTARG}" = "n" ] ; then removeFile=${OPTARG}; else showInfo "Error: The \e[1mremove folder\e[0m value should either be \e[1myes\e[0m or \e[1mno\e[0m."; exit; fi ;;
+          if [ "${OPTARG}" = "yes" ] || [ "${OPTARG}" = "no" ] ; then removeFile=${OPTARG}; else showInfo "Error: The \e[1mremove folder\e[0m value should either be \e[1myes\e[0m or \e[1mno\e[0m."; exit; fi ;;
         p)
           folder=${OPTARG}
           if ! [[ $folder == */ ]]; then folder="$folder/"; showInfo "String has been changed to $folder"; fi 
@@ -97,6 +99,8 @@ do
         g) gpu=${OPTARG};;
         l) gpuLocation=${OPTARG};;
         q) videoQuality=${OPTARG};;
+        f) 
+          if [ "${OPTARG}" == "yes" ] || [ "${OPTARG}" == "no" ] ; then ignoreOriginalFormat=${OPTARG}; else showInfo "Error: The \e[1mignore original format\e[0m value should either be \e[1myes\e[0m or \e[1mno\e[0m."; exit; fi ;;
         h) 
           if ! [[ ${OPTARG} == "elp" ]] ; then showInfo "Error: The \e[1mhelp\e[0m argument should be \e[1m-help\e[0m."; exit; else showHelp; exit; fi;;
         *) showInfo "Error: Invalid option selected!"; exit;;
@@ -123,6 +127,7 @@ echo -e "Video directory                       =>  \e[1m$path\e[0m"
 echo -e "Using gpu?                            =>  \e[1m$gpu\e[0m"
 echo -e "Gpu path                              =>  \e[1m$gpuLocation\e[0m"
 echo -e "Video quality selected                =>  \e[1m${videoQuality:-'default'}\e[0m"
+echo -e "Ignore format                         =>  \e[1m$ignoreOriginalFormat\e[0m"
 echo
 echo "#######################################################"
 echo "#######################################################"
@@ -136,7 +141,7 @@ if [[ $totalfiles -gt 0 ]]
 then
 
   if [ ! -d "${path}CONVERTED" ]; then mkdir -p "${path}CONVERTED"; fi
-  if [[ $removeFile == 'n' ]]
+  if [[ $removeFile == 'no' ]]
   then
     if [ ! -d "${path}ORIGINAL" ]; then mkdir -p "${path}ORIGINAL"; fi
   fi
@@ -152,9 +157,11 @@ then
     if [[ ${chargingStates[@]} =~ $chargingState ]] || [[ $batteryPower -gt 50 ]]
     then
 
-      originalCode=$( ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$file" )
-      if [[ $originalCode = 'hevc'  ]] || [[ $originalCode = 'av1' ]]; then showInfo "Video already in $codec format. Skipping converting $file"; continue; fi
-
+      if [[ $ignoreOriginalFormat == "no" ]]
+      then 
+        originalCode=$( ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$file" )
+        if [[ $originalCode = 'hevc'  ]] || [[ $originalCode = 'av1' ]]; then showInfo "Video already in $codec format. Skipping converting $file"; continue; fi
+      fi
       
       fileSize=$( wc -c "$file" | awk '{print $1}' )
       
@@ -162,19 +169,19 @@ then
 
       urlremoved="${file##*/}"
       filetyperemoved="${urlremoved%.*}"
-      convertedFileAlreadyExists="n"
+      convertedFileAlreadyExists="no"
       
       if [[ $codec == "av1" ]]
       then
         showInfo "Converting using \e[1mav1\e[0m..."
 
-        if [[ $gpu == "y" ]]
+        if [[ $gpu == "yes" ]]
         then 
           showInfo "No gpu functionality for av1 conversion added yet! Use software decoder."
         else 
           {
-            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -i '$file' -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy '${path}CONVERTED/${filetyperemoved}.${outputfiletype}'" && \
-            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf "${videoQuality:-32}" -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a copy "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
+            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -i '$file' -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf ${videoQuality:-32} -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a aac '${path}CONVERTED/${filetyperemoved}.${outputfiletype}'" && \
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libsvtav1 -preset 5 -crf "${videoQuality:-32}" -g 240 -pix_fmt yuv420p10le -svtav1-params tune=0:film-grain=8 -c:a aac "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
             moveOrDeleteFiles 
           } || continue
         fi
@@ -184,21 +191,21 @@ then
         
         showInfo "Converting using \e[1mhevc\e[0m..."
 
-        if [[ $gpu == "y" ]]
+        if [[ $gpu == "yes" ]]
         then 
           {
-            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -hwaccel vaapi -hwaccel_device $gpuLocation -hwaccel_output_format vaapi -extra_hw_frames 30 -i '$file' -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v hevc_vaapi -qp ${videoQuality:-29} -pix_fmt yuv420p -profile:v main -preset slower -c:a copy '${path}CONVERTED/${filetyperemoved}.${outputfiletype}'" &&  \
-            time ffmpeg -hide_banner -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v hevc_vaapi -qp "${videoQuality:-29}" -pix_fmt yuv420p -profile:v main -preset slower -c:a copy "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
+            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -hwaccel vaapi -hwaccel_device $gpuLocation -hwaccel_output_format vaapi -extra_hw_frames 30 -i '$file' -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v hevc_vaapi -qp ${videoQuality:-29} -pix_fmt yuv420p -profile:v main -preset slower -c:a aac '${path}CONVERTED/${filetyperemoved}.${outputfiletype}'" &&  \
+            time ffmpeg -hide_banner -loglevel verbose -hwaccel vaapi -hwaccel_device "$gpuLocation" -hwaccel_output_format vaapi -extra_hw_frames 30 -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v hevc_vaapi -qp "${videoQuality:-29}" -pix_fmt yuv420p -profile:v main -preset slower -c:a aac "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
             moveOrDeleteFiles
           } || {
-            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -i '$file' -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset medium -crf ${videoQuality:-27} -c:a copy '${path}CONVERTED/${filetyperemoved}.${outputfiletype}' -y" && \
-            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset medium -crf "${videoQuality:-27}" -c:a copy "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" -y && \
+            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -i '$file' -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset medium -crf ${videoQuality:-27} -c:a aac '${path}CONVERTED/${filetyperemoved}.${outputfiletype}' -y" && \
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset medium -crf "${videoQuality:-27}" -c:a aac "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" -y && \
             moveOrDeleteFiles
           } || continue
         else
           {
-            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -i '$file' -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a copy '${path}CONVERTED/${filetyperemoved}.${outputfiletype}'" && \
-            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf "${videoQuality:-27}" -c:a copy "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
+            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -i '$file' -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf ${videoQuality:-27} -c:a aac '${path}CONVERTED/${filetyperemoved}.${outputfiletype}'" && \
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx265 -pix_fmt yuv420p -profile:v main -preset slower -crf "${videoQuality:-27}" -c:a aac "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
             moveOrDeleteFiles
           } || continue
         fi
@@ -207,13 +214,13 @@ then
         
         showInfo "Converting using \e[1mh264\e[0m..."
 
-        if [[ $gpu == "y" ]]
+        if [[ $gpu == "yes" ]]
         then 
           showInfo "No gpu functionality for h264 conversion added yet! Use software decoder."
         else
           {
-            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -i $file -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a copy ${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
-            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf "${videoQuality:-22}" -tune film -c:a copy "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
+            showInfo "COMMAND: time ffmpeg -hide_banner -loglevel verbose -i $file -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf ${videoQuality:-22} -tune film -c:a aac ${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
+            time ffmpeg -hide_banner -loglevel verbose -i "$file" -c:s mov_text -metadata:s:s:0 language=eng -movflags use_metadata_tags -map_metadata 0 -c:v libx264 -pix_fmt yuv420p -profile:v high -level 4.1 -preset slower -crf "${videoQuality:-22}" -tune film -c:a aac "${path}CONVERTED/${filetyperemoved}.${outputfiletype}" && \
             moveOrDeleteFiles
           } || continue
         fi
